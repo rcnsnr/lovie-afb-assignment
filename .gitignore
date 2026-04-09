@@ -1,0 +1,21 @@
+# dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# environment variables — never commit secrets
+.env.local
+.env.*.local
+
+# Playwright artifacts (kept in e2e-evidence/ for submission; raw output ignored)
+test-results/
+playwright-report/
+
+# Vercel
+.vercel/
+
+# misc
+*.log
+.DS_Store

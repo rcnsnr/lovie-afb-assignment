@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+mapfile -t STAGED_FILES < <(git diff --cached --name-only --diff-filter=ACMR | grep -v '\.claude/skills/speckit-')
+
+if [ "${#STAGED_FILES[@]}" -eq 0 ]; then
+  exit 0
+fi
+
+bash "$ROOT/scripts/0-auto_fix_and_validate.sh" "$ROOT" "${STAGED_FILES[@]}"
+git add -- "${STAGED_FILES[@]}"
+
+echo "[ok] pre-commit auto-fix completed"
