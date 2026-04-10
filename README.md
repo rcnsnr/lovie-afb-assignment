@@ -108,16 +108,23 @@ Key files for review:
 | bcryptjs                | 2.x     | Demo password hashing             |
 | playwright              | 1.49.x  | E2E tests + video evidence        |
 
+### Environment Setup
+
+```bash
+cp .env.example .env.local
+# Edit .env.local — fill in DATABASE_URL and SESSION_SECRET
+```
+
+`SESSION_SECRET` must be at least 32 characters. Generate one with:
+
+```bash
+openssl rand -hex 32
+```
+
 ### Install Dependencies
 
 ```bash
 npm install
-```
-
-or
-
-```bash
-pnpm install
 ```
 
 ### Start the App

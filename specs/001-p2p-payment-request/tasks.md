@@ -55,7 +55,7 @@
 - required review: confirm video and trace output paths; confirm baseURL reads from env
 - docs impact: update `README.md` E2E section with final run command
 
-### T004
+### T004 ✓
 
 - objective: Add `.env.example` (with `DATABASE_URL`, `SESSION_SECRET`, `BASE_URL`)
   and `.env.local` for local dev. Confirm `.env.local` is in `.gitignore`.
