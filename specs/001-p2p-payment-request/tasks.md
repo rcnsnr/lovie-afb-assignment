@@ -12,7 +12,7 @@
 
 ## Phase 1 — Project Bootstrap
 
-### T001
+### T001 ✓
 
 - objective: Initialise the Next.js 14 App Router project with TypeScript strict mode,
   Tailwind CSS, and ESLint. Establish the base directory structure per the plan.

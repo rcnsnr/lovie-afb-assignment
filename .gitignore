@@ -16,6 +16,9 @@ playwright-report/
 # Vercel
 .vercel/
 
+# Next.js generated type file (auto-regenerated)
+next-env.d.ts
+
 # misc
 *.log
 .DS_Store

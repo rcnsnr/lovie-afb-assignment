@@ -84,7 +84,7 @@ else
 fi
 
 if has_cmd npx && [ -f package.json ]; then
-  if ls eslint.config.* .eslintrc* >/dev/null 2>&1 && npx --no-install eslint --version >/dev/null 2>&1; then
+  if { ls eslint.config.* >/dev/null 2>&1 || ls .eslintrc* >/dev/null 2>&1; } && npx --no-install eslint --version >/dev/null 2>&1; then
     echo "[fix] eslint --fix"
     npx --no-install eslint . --fix
     echo "[check] eslint"
