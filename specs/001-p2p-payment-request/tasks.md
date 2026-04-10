@@ -212,7 +212,7 @@ protected pages require a valid session.
 dollar amount, and optional note. The request is created in PENDING state with a 7-day
 expiry. (AC1, AC10, AC11, AC13)
 
-### T013
+### T013 ✓
 
 - objective: Implement `POST /api/requests` — Zod validation (amountDollars via single
   chain, recipientEmail, note max 200 chars), resolve recipient by email (404 if not
