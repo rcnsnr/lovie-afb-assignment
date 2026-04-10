@@ -164,7 +164,7 @@ protected pages require a valid session.
   confirm session is written before response is returned
 - docs impact: none
 
-### T010
+### T010 ✓
 
 - objective: Implement `POST /api/auth/logout` and `GET /api/auth/me`.
 - files: `app/api/auth/logout/route.ts`, `app/api/auth/me/route.ts`
@@ -176,7 +176,7 @@ protected pages require a valid session.
 - required review: confirm logout destroys session (not just expires cookie)
 - docs impact: none
 
-### T011
+### T011 ✓
 
 - objective: Implement `app/(auth)/login/page.tsx` — login form with email + password
   fields, loading state, inline error on failure, redirect to `/dashboard/outgoing`
