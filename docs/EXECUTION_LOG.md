@@ -118,6 +118,72 @@ Keep entries short and factual.
 
 ---
 
+### 2026-04-10 — Phase 1 bootstrap complete (T001–T004)
+
+#### What was done
+
+- **T001**: Scaffolded Next.js 14.2.35 App Router manually (create-next-app rejects
+  non-empty dirs). TypeScript strict, Tailwind 3, ESLint 8, Prettier. Full App Router
+  directory structure per plan: `(auth)/`, `(protected)/`, `api/` route groups plus
+  `lib/`, `components/`, `prisma/`, `e2e-evidence/`. Dev server verified (`npm run dev`
+  → ready in ~1.4s).
+- **T002**: All runtime and dev dependencies installed and verified. Moved `@prisma/client`
+  to `dependencies` (runtime). Added `ts-node` (seed script) and `prettier` (missing from
+  initial list). Wrote `prisma/schema.prisma` stub manually — `prisma init` fails on
+  Node 24 (isolated to that subcommand; `generate`/`migrate` unaffected). All four
+  imports (`zod`, `iron-session`, `bcryptjs`, `@prisma/client`) verified via `tsc --noEmit`
+  with zero errors. Updated README prerequisites with key deps table.
+- **T003**: `playwright.config.ts` — `video: 'on'`, `trace: 'retain-on-failure'`,
+  `baseURL` from `BASE_URL` env (default `http://localhost:3000`), Chromium only,
+  `workers: 1`. `e2e/smoke.spec.ts` navigates to `/` and asserts `< 500`. Smoke test
+  passed (1 passed, 4.1s); `test-results/.../video.webm` produced. Updated README E2E
+  section with final run commands.
+- **T004**: `.env.example` with `DATABASE_URL` (pgbouncer params for Vercel serverless),
+  `SESSION_SECRET` (min 32 chars, generation note), `BASE_URL`. `.env.local` created
+  locally and confirmed absent from `git status` (gitignored). README local dev section
+  updated with `cp .env.example .env.local` and `openssl rand -hex 32` instructions.
+
+#### Why it was done
+
+- Phase 1 is the bootstrap prerequisite for all subsequent implementation tasks.
+  No Phase 2 task (DB + utilities) can start without a working Next.js project,
+  verified deps, E2E toolchain, and env configuration.
+
+#### Artifacts changed
+
+- `package.json`, `package-lock.json` — full dep list with corrected placement
+- `tsconfig.json`, `next.config.js`, `tailwind.config.ts`, `postcss.config.js` — project config
+- `.eslintrc.json`, `.prettierrc.json`, `.prettierignore` — formatting/lint config
+- `app/layout.tsx`, `app/globals.css`, `app/page.tsx` — App Router root files
+- `lib/auth.ts` — stub (full implementation T008)
+- `prisma/schema.prisma` — datasource stub (full schema T005)
+- `playwright.config.ts`, `e2e/smoke.spec.ts` — E2E toolchain
+- `.env.example`, `.gitignore` (next-env.d.ts entry added)
+- `README.md` — prerequisites, deps table, env setup, E2E run commands
+- `docs/BUILD_NOTES.md` — two corrections documented
+- `scripts/0-auto_fix_and_validate.sh` — ESLint glob detection fix (OR pattern)
+- `specs/001-p2p-payment-request/tasks.md` — T001–T004 marked ✓
+
+#### Validation
+
+- `npm run dev` → Next.js 14.2.35 ready (smoke-verified)
+- `tsc --noEmit` → 0 errors
+- `npx playwright test e2e/smoke.spec.ts` → 1 passed; `video.webm` produced
+- All commits passed pre-commit hook (markdownlint + prettier + ESLint clean)
+
+#### Notes
+
+- Three corrections applied vs. plan (all in BUILD_NOTES.md):
+  1. `next.config.ts` → `next.config.js` (TS config is Next.js 15+)
+  2. `autoprefixer` + `prettier` added to devDeps (missing from initial list)
+  3. `prisma init` fails on Node 24 — schema written manually; pipeline unaffected
+- Draft PR open: rcnsnr/lovie-afb-assignment#1 (feat/001-p2p-payment-request → main)
+- All 4 Phase 1 commits pushed to `origin/feat/001-p2p-payment-request`
+- Next step: T005 — full Prisma schema (`User`, `PaymentRequest`, `RequestStatus` enum,
+  all indexes) + first migration
+
+---
+
 ### 2026-04-09 14:00 — Planning baseline committed; feature branch created
 
 #### What was done
