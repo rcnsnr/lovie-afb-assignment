@@ -127,7 +127,7 @@
   validation
 - docs impact: none
 
-### T008
+### T008 ✓
 
 - objective: Implement `lib/auth.ts` — iron-session config (`SESSION_SECRET`, cookie
   options), `getSession(request)` helper, and `requireSession(request)` that throws
