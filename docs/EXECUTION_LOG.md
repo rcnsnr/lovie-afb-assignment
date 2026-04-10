@@ -118,6 +118,54 @@ Keep entries short and factual.
 
 ---
 
+### 2026-04-09 14:00 — Planning baseline committed; feature branch created
+
+#### What was done
+
+- Fixed `.githooks/pre-commit` to filter `speckit-*` files before passing staged
+  files to the auto-fix script. The find-command exclusion already applied in
+  all-files mode; the hook was missing the same filter for explicit staged-file mode.
+- Created `.gitignore` (node_modules, .next, .env.local, test-results, .vercel).
+- Committed planning work in four logical phase commits on `main`:
+  1. `chore(bootstrap)` — execution harness, skills, scripts, docs scaffold
+  2. `docs(constitution)` — v1.0.0, all 5 principles, constraints, governance
+  3. `spec(feature)` — spec.md (13 ACs), checklists (52 items), feature.json
+  4. `plan(tech)` — plan.md, research.md, data-model.md, contracts/api.md,
+     tasks.md (T001–T031)
+- Created `feat/001-p2p-payment-request` branch from `main`.
+- Pushed `main` and `feat/001-p2p-payment-request` to `origin`.
+- Draft PR deferred: GitHub requires at least one commit ahead of `main`;
+  PR opens after T001 lands on the feature branch.
+
+#### Why it was done
+
+- `/git-flow-guard` analysis identified that all pre-implementation work was
+  untracked with no commits. Phase-separated commits make the spec-first workflow
+  visible to reviewers and satisfy the preferred cadence in the skill.
+- Feature branch created before implementation so all product code is isolated
+  from the planning baseline.
+
+#### Artifacts changed
+
+- `.githooks/pre-commit` — added `grep -v '.claude/skills/speckit-'` filter
+- `.gitignore` — created
+- `main` branch — 4 commits pushed
+- `feat/001-p2p-payment-request` — created and pushed (no impl commits yet)
+
+#### Validation
+
+- All four commits passed pre-commit hook (markdownlint + prettier clean)
+- `git log --oneline` on `main`: 4 commits, correct order
+- `git push` successful for both branches
+
+#### Notes
+
+- No implementation code in any commit. All committed artifacts are planning only.
+- Next step: T001 — Next.js project init on `feat/001-p2p-payment-request`;
+  draft PR opens after T001 commit.
+
+---
+
 ### 2026-04-09 13:30 — Cross-artifact analysis complete (speckit-analyze)
 
 #### What was done
