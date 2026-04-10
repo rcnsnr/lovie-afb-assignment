@@ -14,7 +14,7 @@ Use this document to show how AI was used in a controlled way.
 | Edge-case audit   | Claude Code | 6 gaps found; corrections applied to spec/plan only  |
 | Task breakdown    | Claude Code | 31 tasks across 9 phases; full AC-to-task mapping    |
 | Artifact analysis | Claude Code | 0 CRITICAL, 6 findings; 100% AC coverage confirmed   |
-| Implementation    | Claude Code | Phase 2 complete (T005–T008); 0 corrections required |
+| Implementation    | Claude Code | Phase 3 complete (T009–T012); 0 corrections required |
 | Review            |             | Not started                                          |
 | Evidence prep     |             | Not started                                          |
 
@@ -46,6 +46,10 @@ Use this document to show how AI was used in a controlled way.
 - `/speckit-implement` (T005–T008) — Phase 2 DB/utilities/auth execution; AI generated
   schema, seed, and all lib modules; `tsc --noEmit` + `prisma validate` used as
   per-task validation gates; 0 corrections required
+- `/speckit-implement` (T009–T012) — Phase 3 auth routes + login UI + session guard;
+  AI generated all 5 files; `phase_closeout.sh` used as phase-end gate; 0 corrections
+  required; ancillary fixes: typecheck script, .gitignore .env entry, Supabase migration
+  via MCP
 
 ## Where AI Helped
 
@@ -76,6 +80,10 @@ Use this document to show how AI was used in a controlled way.
   each step — dev server smoke test, `tsc --noEmit`, Playwright smoke test with video
   artifact, and `git status` check for gitignored files. Caught and corrected 3 issues
   that were not visible at planning time (see corrections below).
+- **Phase 3 implementation**: AI executed T009–T012 with per-task typecheck + lint gates
+  and a phase-end `phase_closeout.sh`. Protected layout uses `redirect()` from
+  `next/navigation` (server-side) as required by spec — not a client guard. Login page
+  error is inline DOM paragraph, not alert/toast. 0 corrections required.
 - **Phase 2 implementation**: AI executed T005–T008 with per-task validation gates
   (`prisma validate`, `prisma generate`, `tsc --noEmit`, inline logic test for
   `parseDollars`). IG2 and IG6 edge-case audit corrections applied correctly without
@@ -137,12 +145,25 @@ Use this document to show how AI was used in a controlled way.
   `docs/EXECUTION_LOG.md` and anchored in the plan.
 - Phase 1 implementation (T001–T004) is complete. All corrections are recorded in
   `docs/BUILD_NOTES.md`. Draft PR open: rcnsnr/lovie-afb-assignment#1.
-- Phase 2 implementation (T005–T008) is complete. No corrections required. Migration is
-  deferred until `DATABASE_URL` is configured; schema + client generation verified.
+- Phase 2 implementation (T005–T008) is complete. No corrections required. Migration
+  applied to Supabase via MCP; local migration file committed.
+- Phase 3 implementation (T009–T012) is complete. No corrections required.
+  `phase_closeout.sh` all 5 checks pass.
 - AI drove all file creation; human review focused on confirming directory structure
   against the plan and approving the `prisma init` workaround decision.
 
 ## Recent Updates
+
+### 2026-04-11 — Phase 3 auth routes + login UI + session guard (T009–T012)
+
+- T009: `POST /api/auth/login` — Zod 400, bcrypt compare, no user enumeration on 401,
+  session saved before response.
+- T010: `POST /api/auth/logout` (session.destroy) + `GET /api/auth/me` (session read or 401).
+- T011: Login page client component — inline error (no alert/toast), loading state,
+  redirect on success.
+- T012: `app/(protected)/layout.tsx` — server-side `redirect()`, not client guard.
+- Ancillary: typecheck script, `.env` gitignore, Supabase migration via MCP.
+- 0 corrections required. `phase_closeout.sh` all 5 checks pass.
 
 ### 2026-04-10 — Phase 2 DB/utilities/auth implementation (T005–T008)
 

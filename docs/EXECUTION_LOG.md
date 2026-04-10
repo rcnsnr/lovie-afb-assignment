@@ -118,6 +118,61 @@ Keep entries short and factual.
 
 ---
 
+### 2026-04-11 — Phase 3 complete: Auth routes + login UI + session guard (T009–T012)
+
+#### What was done
+
+- **T009**: `POST /api/auth/login` — Zod validation (400 on bad fields), bcrypt.compare
+  against stored hash, same-message 401 (no user enumeration), iron-session save before
+  response, returns `{ user: { id, email, name } }`.
+- **T010**: `POST /api/auth/logout` (session.destroy — full destruction, not expiry) and
+  `GET /api/auth/me` (returns session user or 401).
+- **T011**: `app/(auth)/login/page.tsx` — client component; email + password fields;
+  loading state (`disabled` button + text swap); inline error paragraph on failure (no
+  alert/toast); `router.push("/dashboard/outgoing")` on success.
+- **T012**: `app/(protected)/layout.tsx` — async server component; `getSession()` then
+  `redirect("/login")` if no session; `redirect()` from `next/navigation` (server-side,
+  not client guard). Covers all routes under `(protected)/`.
+- Ancillary: added `npm run typecheck` script; added `.env` to `.gitignore` (Prisma CLI
+  reads `.env`, not `.env.local`); applied Prisma migration to Supabase via MCP and
+  committed local migration file.
+
+#### Why it was done
+
+- Phase 3 is the auth prerequisite for all subsequent feature phases.
+  No dashboard, request creation, or action route can be implemented without
+  a working session + protected route guard.
+
+#### Artifacts changed
+
+- `app/api/auth/login/route.ts` — created
+- `app/api/auth/logout/route.ts` — created
+- `app/api/auth/me/route.ts` — created
+- `app/(auth)/login/page.tsx` — created
+- `app/(protected)/layout.tsx` — created
+- `prisma/migrations/20260410000000_init/migration.sql` — created
+- `package.json` — added `typecheck` script
+- `.gitignore` — added `.env`
+- `specs/001-p2p-payment-request/tasks.md` — T009–T012 marked ✓
+- All commits pushed to `origin/feat/001-p2p-payment-request`
+
+#### Validation
+
+- `phase_closeout.sh` all 5 checks pass: markdownlint, prettier, ESLint, `tsc --noEmit`,
+  `prisma validate`, `prisma generate`
+- Prisma migration applied to Supabase via MCP; tables `User` and `PaymentRequest`
+  confirmed present in `information_schema.tables`
+
+#### Notes
+
+- 0 corrections required this phase. All outputs accepted as generated.
+- `prisma migrate resolve --applied 20260410000000_init` + `prisma db seed` still pending
+  locally (requires DATABASE_URL in `.env`; seeding deferred until user adds password).
+- Next step: Phase 4 — T013 `POST /api/requests` (create payment request); first route
+  with real business logic (self-request check IG1, conditional write CR1+CR2).
+
+---
+
 ### 2026-04-10 — Phase 2 complete: DB schema, seed, utilities, auth (T005–T008)
 
 #### What was done
