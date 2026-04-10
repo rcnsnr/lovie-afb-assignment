@@ -14,7 +14,7 @@ Use this document to show how AI was used in a controlled way.
 | Edge-case audit   | Claude Code | 6 gaps found; corrections applied to spec/plan only  |
 | Task breakdown    | Claude Code | 31 tasks across 9 phases; full AC-to-task mapping    |
 | Artifact analysis | Claude Code | 0 CRITICAL, 6 findings; 100% AC coverage confirmed   |
-| Implementation    |             | Not started                                          |
+| Implementation    | Claude Code | Phase 1 complete (T001–T004); 3 corrections applied  |
 | Review            |             | Not started                                          |
 | Evidence prep     |             | Not started                                          |
 
@@ -40,6 +40,9 @@ Use this document to show how AI was used in a controlled way.
 - `/speckit-analyze` — read-only cross-artifact analysis; 0 CRITICAL, 1 HIGH, 3 MEDIUM,
   2 LOW findings; key: T016/T024 ordering dependency and `updateMany` → `findUnique`
   two-query pattern for conditional action routes
+- `/speckit-implement` (T001–T004) — thin-slice bootstrap execution; AI generated all
+  scaffold files and ran validation at each step; 3 corrections surfaced and applied
+  during implementation (not caught during planning)
 
 ## Where AI Helped
 
@@ -66,6 +69,10 @@ Use this document to show how AI was used in a controlled way.
   later) and the Prisma `updateMany` return-type issue (requires a second `findUnique`
   call to build the DTO). Both are non-obvious patterns that would have caused
   implementation friction mid-slice.
+- **Bootstrap implementation**: AI executed T001–T004 in thin slices with validation at
+  each step — dev server smoke test, `tsc --noEmit`, Playwright smoke test with video
+  artifact, and `git status` check for gitignored files. Caught and corrected 3 issues
+  that were not visible at planning time (see corrections below).
 
 ## Where AI Was Weak
 
@@ -80,6 +87,11 @@ Use this document to show how AI was used in a controlled way.
   were MEDIUM or lower (except one HIGH ordering issue). The HIGH finding (T016/T024) is
   real but mitigable with a one-line dependency note. No CRITICAL gaps were missed by the
   earlier phases — which validates the edge-case audit corrections were effective.
+- **Implementation surface drift**: 3 corrections were required during Phase 1 that
+  planning did not anticipate — `next.config.ts` (Next.js 14 limitation), missing
+  `autoprefixer`/`prettier` in devDeps, and `prisma init` failure on Node 24. All were
+  low-risk and caught immediately by validation steps, but they show the plan-to-code gap
+  is real even for simple bootstrap tasks.
 
 ## Manual Corrections
 
@@ -88,6 +100,18 @@ Use this document to show how AI was used in a controlled way.
 - **Edge-case corrections**: AI generated the corrections; human reviewed and explicitly
   approved each before application. No code was written — all changes were to spec and
   plan artifacts.
+- **next.config.ts → next.config.js**: AI wrote `next.config.ts` based on the plan's
+  stack (Next.js 14 + TypeScript). Next.js 14 does not support TypeScript config files
+  (that is Next.js 15+). Caught on first `npm run dev` call; corrected immediately.
+  No human override needed — a straightforward fix once the error was clear.
+- **Missing devDeps (autoprefixer, prettier)**: `postcss.config.js` referenced
+  `autoprefixer` and the pre-commit hook relied on `prettier`, but neither was listed in
+  the initial `package.json`. Caught during validation; added and installed without
+  changing any application logic.
+- **prisma init Node 24 incompatibility**: `prisma init` (Prisma 5.22.0) throws on
+  Node 24. AI diagnosed the error as isolated to the `init` subcommand and wrote
+  `prisma/schema.prisma` manually. `prisma generate` and `migrate` verified working.
+  Human judgment confirmed: proceed with manual schema; do not downgrade Node.
 
 ## Notes for Reviewers
 
@@ -97,12 +121,30 @@ Use this document to show how AI was used in a controlled way.
   AI-recommended and human-chosen answers with full Q&A trail.
 - The spec-review and edge-case-audit outputs are preserved in this session's conversation
   history but their material decisions are encoded into the spec, plan, and this log.
-- No implementation code has been written yet. All artifacts at this stage are
-  specification, planning, and documentation.
 - The regression watchlist (RW1–RW7) from the edge-case audit is recorded in
   `docs/EXECUTION_LOG.md` and anchored in the plan.
+- Phase 1 implementation (T001–T004) is complete. All corrections are recorded in
+  `docs/BUILD_NOTES.md`. Draft PR open: rcnsnr/lovie-afb-assignment#1.
+- AI drove all file creation; human review focused on confirming directory structure
+  against the plan and approving the `prisma init` workaround decision.
 
 ## Recent Updates
+
+### 2026-04-10 — Phase 1 bootstrap implementation (T001–T004)
+
+- T001: Next.js 14 App Router scaffold — manual init (create-next-app rejected non-empty
+  dir); strict TypeScript, Tailwind 3, ESLint 8, Prettier; full App Router directory
+  structure per plan; dev server verified.
+- T002: All deps installed and verified — `@prisma/client` moved to `dependencies`;
+  `ts-node` and `prettier` added; all 4 key imports verified via `tsc --noEmit`.
+- T003: Playwright configured — `video: 'on'`, `trace: 'retain-on-failure'`, `baseURL`
+  from env; smoke test passed; `video.webm` artifact produced.
+- T004: `.env.example` with documented `SESSION_SECRET` minimum length; `.env.local`
+  confirmed gitignored.
+- 3 implementation corrections surfaced (next.config.ts, missing devDeps, prisma init).
+  All recorded in `docs/BUILD_NOTES.md`.
+- Human judgment: confirmed `prisma init` workaround (manual schema, no Node downgrade).
+- Commits: 5 commits pushed to `feat/001-p2p-payment-request`; draft PR open.
 
 ### 2026-04-09 — Task breakdown and cross-artifact analysis phase
 
