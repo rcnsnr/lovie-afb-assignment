@@ -6,6 +6,7 @@ node_modules/
 out/
 
 # environment variables — never commit secrets
+.env
 .env.local
 .env.*.local
 
