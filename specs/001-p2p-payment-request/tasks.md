@@ -150,7 +150,7 @@
 **Story goal**: A user can log in with a seeded email and password, and log out. All
 protected pages require a valid session.
 
-### T009
+### T009 ✓
 
 - objective: Implement `POST /api/auth/login` — validate email + password with Zod,
   look up user by email, compare bcrypt hash, set iron-session cookie, return user.
