@@ -107,7 +107,7 @@
 - docs impact: update `docs/ASSUMPTIONS.md` with seed user credentials; update
   `README.md` with seed command
 
-### T007
+### T007 ✓
 
 - objective: Implement `lib/prisma.ts` (singleton Prisma client), `lib/money.ts`
   (`parseDollars`, `formatCents`), and `lib/requests.ts` (`getEffectiveStatus`).
