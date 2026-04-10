@@ -14,7 +14,7 @@ Use this document to show how AI was used in a controlled way.
 | Edge-case audit   | Claude Code | 6 gaps found; corrections applied to spec/plan only  |
 | Task breakdown    | Claude Code | 31 tasks across 9 phases; full AC-to-task mapping    |
 | Artifact analysis | Claude Code | 0 CRITICAL, 6 findings; 100% AC coverage confirmed   |
-| Implementation    | Claude Code | Phase 1 complete (T001–T004); 3 corrections applied  |
+| Implementation    | Claude Code | Phase 2 complete (T005–T008); 0 corrections required |
 | Review            |             | Not started                                          |
 | Evidence prep     |             | Not started                                          |
 
@@ -43,6 +43,9 @@ Use this document to show how AI was used in a controlled way.
 - `/speckit-implement` (T001–T004) — thin-slice bootstrap execution; AI generated all
   scaffold files and ran validation at each step; 3 corrections surfaced and applied
   during implementation (not caught during planning)
+- `/speckit-implement` (T005–T008) — Phase 2 DB/utilities/auth execution; AI generated
+  schema, seed, and all lib modules; `tsc --noEmit` + `prisma validate` used as
+  per-task validation gates; 0 corrections required
 
 ## Where AI Helped
 
@@ -73,6 +76,11 @@ Use this document to show how AI was used in a controlled way.
   each step — dev server smoke test, `tsc --noEmit`, Playwright smoke test with video
   artifact, and `git status` check for gitignored files. Caught and corrected 3 issues
   that were not visible at planning time (see corrections below).
+- **Phase 2 implementation**: AI executed T005–T008 with per-task validation gates
+  (`prisma validate`, `prisma generate`, `tsc --noEmit`, inline logic test for
+  `parseDollars`). IG2 and IG6 edge-case audit corrections applied correctly without
+  reminder — single Zod chain in `parseDollars`, AC5 fixture written as `status=PENDING`
+  with past `expiresAt`. Zero corrections required; all outputs accepted as generated.
 
 ## Where AI Was Weak
 
@@ -92,6 +100,10 @@ Use this document to show how AI was used in a controlled way.
   `autoprefixer`/`prettier` in devDeps, and `prisma init` failure on Node 24. All were
   low-risk and caught immediately by validation steps, but they show the plan-to-code gap
   is real even for simple bootstrap tasks.
+- **Phase 2 correctness**: 0 corrections required. The edge-case audit corrections (IG2,
+  IG6) were applied correctly without prompting. However, Phase 2 correctness cannot be
+  fully validated until `DATABASE_URL` is configured and the migration + seed run against
+  a real database — the schema and logic are verified but the integration path is deferred.
 
 ## Manual Corrections
 
@@ -125,10 +137,27 @@ Use this document to show how AI was used in a controlled way.
   `docs/EXECUTION_LOG.md` and anchored in the plan.
 - Phase 1 implementation (T001–T004) is complete. All corrections are recorded in
   `docs/BUILD_NOTES.md`. Draft PR open: rcnsnr/lovie-afb-assignment#1.
+- Phase 2 implementation (T005–T008) is complete. No corrections required. Migration is
+  deferred until `DATABASE_URL` is configured; schema + client generation verified.
 - AI drove all file creation; human review focused on confirming directory structure
   against the plan and approving the `prisma init` workaround decision.
 
 ## Recent Updates
+
+### 2026-04-10 — Phase 2 DB/utilities/auth implementation (T005–T008)
+
+- T005: Full Prisma schema written — `User`, `PaymentRequest`, `RequestStatus` enum,
+  all 4 indexes, `amountMinorUnits: Int`, nullable timestamps. `prisma validate` clean;
+  `prisma generate` produced client. Migration deferred until `DATABASE_URL` configured.
+- T006: `prisma/seed.ts` — Alice, Bob, Carol with bcrypt cost-10 `demo1234` hashes;
+  AC5 fixture: `status=PENDING`, `expiresAt=now()-24h` (IG6 applied correctly).
+- T007: `lib/prisma.ts` singleton; `lib/money.ts` with single Zod chain in `parseDollars`
+  (IG2 applied correctly); `lib/requests.ts` with `getEffectiveStatus`.
+- T008: `lib/auth.ts` — full iron-session implementation; `getSession`, `requireSession`
+  (throws Response(401)); replaces stub from T001.
+- 0 corrections required. All outputs accepted as generated.
+- Human review: none required this phase; all validation was automated (`tsc`, `prisma validate`).
+- Commits: 5 commits pushed to `feat/001-p2p-payment-request`.
 
 ### 2026-04-10 — Phase 1 bootstrap implementation (T001–T004)
 
