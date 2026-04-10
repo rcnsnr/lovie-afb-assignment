@@ -234,7 +234,7 @@ expiry. (AC1, AC10, AC11, AC13)
   `expiresAt` is UTC
 - docs impact: update `docs/BUILD_NOTES.md` if any deviation from plan
 
-### T014
+### T014 ✓
 
 - objective: Implement `app/(protected)/requests/new/page.tsx` — create request form
   with recipient email, dollar-value amount, optional note. Show loading, success
