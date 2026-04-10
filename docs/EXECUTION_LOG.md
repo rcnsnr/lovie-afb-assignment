@@ -118,6 +118,70 @@ Keep entries short and factual.
 
 ---
 
+### 2026-04-10 — Phase 2 complete: DB schema, seed, utilities, auth (T005–T008)
+
+#### What was done
+
+- **T005**: Replaced `prisma/schema.prisma` stub with full schema — `User`, `PaymentRequest`,
+  `RequestStatus` enum (PENDING/PAID/DECLINED/CANCELLED/EXPIRED), all nullable timestamp
+  fields (`paidAt`, `declinedAt`, `cancelledAt` as `DateTime?`), `amountMinorUnits` as `Int`,
+  and 4 indexes (`requesterId`, `recipientId`, `status`, `expiresAt`). `prisma validate` clean
+  (with dummy URL). `prisma generate` produced client. Migration deferred until `DATABASE_URL`
+  is configured; schema and client generation verified.
+- **T006**: Wrote `prisma/seed.ts` — Alice, Bob, Carol with bcrypt cost-10 `demo1234` hashes
+  (upsert-safe for re-runs); AC5 fixture: `id=00000000-…-0001`, `status=PENDING`,
+  `expiresAt=now()-24h` (per IG6 — must be PENDING not EXPIRED to exercise
+  `getEffectiveStatus()`). Updated `README.md` with seed command and `docs/ASSUMPTIONS.md`
+  with seed credentials.
+- **T007**: Implemented `lib/prisma.ts` (global singleton, hot-reload safe), `lib/money.ts`
+  (`parseDollars` single Zod chain per IG2, `formatCents`), `lib/requests.ts`
+  (`getEffectiveStatus` — returns EXPIRED if PENDING + past expiresAt). Validated logic
+  inline: `parseDollars("15.00")→1500`, `parseDollars("0")→throws`,
+  `parseDollars("15.999")→throws`.
+- **T008**: Replaced `lib/auth.ts` stub with full iron-session implementation — `SessionData`
+  type (`userId`, `email`, `name`), `getSession()`, `requireSession()` (throws `Response(401)`
+  if unauthenticated). Cookie options: `httpOnly: true`, `secure: prod only`, `sameSite: lax`,
+  7-day maxAge.
+
+#### Why it was done
+
+- Phase 2 is the prerequisite for all feature implementation phases. Schema, seed, utilities,
+  and auth helpers must exist before any route handler or UI component can be built.
+- T005/T006: required before migration and E2E seeding.
+- T007: `getEffectiveStatus` is the core expiration mechanism; all dashboard and action routes
+  depend on it. Money utilities enforce the integer-minor-units contract.
+- T008: `requireSession`/`getSession` are called by every protected route and server component.
+
+#### Artifacts changed
+
+- `prisma/schema.prisma` — full schema replacing stub
+- `prisma/seed.ts` — created
+- `lib/prisma.ts` — created
+- `lib/money.ts` — created
+- `lib/requests.ts` — created
+- `lib/auth.ts` — full implementation replacing stub
+- `README.md` — seed command added
+- `docs/ASSUMPTIONS.md` — seed credentials documented
+- `specs/001-p2p-payment-request/tasks.md` — T005–T008 marked ✓
+- 4 commits pushed to `origin/feat/001-p2p-payment-request`
+
+#### Validation
+
+- `prisma validate` (with dummy DATABASE_URL): "The schema at prisma/schema.prisma is valid 🚀"
+- `prisma generate`: client produced (v5.22.0)
+- `tsc --noEmit`: 0 errors after each task
+- `parseDollars` inline logic test: all 3 T007 cases pass
+- All 4 commits passed pre-commit hook (markdownlint + prettier + ESLint clean)
+
+#### Notes
+
+- Migration (`prisma migrate dev`) deferred until `DATABASE_URL` is configured in `.env.local`.
+  Schema and client generation are fully verified. No human corrections required this phase.
+- Next step: T009 — `POST /api/auth/login` (Phase 3 — Auth); then T010 (logout), T011
+  (login page UI).
+
+---
+
 ### 2026-04-10 — Phase 1 bootstrap complete (T001–T004)
 
 #### What was done
