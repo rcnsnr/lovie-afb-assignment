@@ -31,3 +31,11 @@ Use this file as a compact log of meaningful execution decisions.
 ## Spec / Implementation Drift Notes
 
 None yet.
+
+## Workflow Enhancements
+
+- Date: 2026-04-10
+- Decision: Added `scripts/phase_closeout.sh` and the `/phase-closeout` skill.
+- Reason: Phase-end validation and reviewer-facing log sync were being done manually and
+  were easy to forget. The new workflow standardizes closeout into one repeatable path.
+- Impact: Phase boundaries now have a default validation + logging flow before commit/push.

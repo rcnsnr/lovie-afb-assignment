@@ -156,6 +156,18 @@ Run the lightweight hygiene pass:
 bash scripts/0-auto_fix_and_validate.sh .
 ```
 
+Run the standard phase-end validation pass:
+
+```bash
+bash scripts/phase_closeout.sh .
+```
+
+After a completed phase in Claude Code, prefer:
+
+1. `/phase-closeout`
+2. commit
+3. push
+
 If the repository is a git repo, enable the local pre-commit hook path once:
 
 ```bash

@@ -71,6 +71,7 @@ After each meaningful phase, milestone, or behavior-changing fix:
 
 - run /execution-log-sync
 - run /ai-process-sync
+- prefer /phase-closeout at phase boundaries so validation + log sync happen together
 
 ## MODEL AND EFFORT POLICY
 
@@ -111,6 +112,12 @@ Preferred order:
 - then run the most relevant targeted tests or E2E checks
 
 Treat formatting and basic lint fixes as automatic hygiene, not as optional cleanup.
+
+At phase boundaries, prefer:
+
+- `bash scripts/phase_closeout.sh`
+
+Then sync reviewer-facing docs through the phase-closeout skill.
 
 ## SUBAGENT POLICY
 
