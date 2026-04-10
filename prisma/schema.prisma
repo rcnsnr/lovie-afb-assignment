@@ -9,3 +9,45 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+
+  sentRequests     PaymentRequest[] @relation("Requester")
+  receivedRequests PaymentRequest[] @relation("Recipient")
+}
+
+model PaymentRequest {
+  id               String        @id @default(uuid())
+  requesterId      String
+  recipientId      String
+  amountMinorUnits Int
+  note             String?
+  status           RequestStatus @default(PENDING)
+  expiresAt        DateTime
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  paidAt           DateTime?
+  declinedAt       DateTime?
+  cancelledAt      DateTime?
+
+  requester User @relation("Requester", fields: [requesterId], references: [id])
+  recipient User @relation("Recipient", fields: [recipientId], references: [id])
+
+  @@index([requesterId])
+  @@index([recipientId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+enum RequestStatus {
+  PENDING
+  PAID
+  DECLINED
+  CANCELLED
+  EXPIRED
+}

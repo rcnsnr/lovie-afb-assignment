@@ -72,7 +72,7 @@
 
 ## Phase 2 — Database and Core Utilities
 
-### T005
+### T005 ✓
 
 - objective: Write the Prisma schema — `User`, `PaymentRequest`, `RequestStatus` enum,
   all timestamp fields, indexes on `requesterId`, `recipientId`, `status`, `expiresAt`.
