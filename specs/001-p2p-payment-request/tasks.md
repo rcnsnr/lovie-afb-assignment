@@ -89,7 +89,7 @@
   timestamp fields are `DateTime?`; confirm enum matches spec exactly
 - docs impact: none beyond what `data-model.md` already captures
 
-### T006
+### T006 ✓
 
 - objective: Write `prisma/seed.ts` — seed Alice, Bob, Carol with `demo1234` bcrypt
   hashes, plus one PaymentRequest with `status = PENDING` and `expiresAt` set to

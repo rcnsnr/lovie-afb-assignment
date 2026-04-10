@@ -127,6 +127,15 @@ openssl rand -hex 32
 npm install
 ```
 
+### Seed the Database
+
+After running migrations, seed demo users (Alice, Bob, Carol — password: `demo1234`) and the AC5
+expiry fixture:
+
+```bash
+npx prisma db seed
+```
+
 ### Start the App
 
 ```bash
