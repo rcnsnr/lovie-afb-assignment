@@ -92,10 +92,21 @@ Key files for review:
 
 ### Prerequisites
 
-- Node.js
-- a package manager such as `npm` or `pnpm`
-- Supabase Postgres or another compatible PostgreSQL database
-- Playwright browser dependencies after install
+- Node.js 20+ (LTS recommended; tested on 24)
+- npm 10+
+- A PostgreSQL database — Supabase free tier works out of the box
+- `DATABASE_URL` and `SESSION_SECRET` environment variables (see `.env.example`)
+
+### Key Dependencies
+
+| Package                 | Version | Purpose                           |
+| ----------------------- | ------- | --------------------------------- |
+| next                    | 14.2.35 | App Router framework              |
+| prisma / @prisma/client | 5.22.x  | ORM + migrations                  |
+| iron-session            | 8.x     | Signed, encrypted cookie sessions |
+| zod                     | 3.x     | API boundary validation           |
+| bcryptjs                | 2.x     | Demo password hashing             |
+| playwright              | 1.49.x  | E2E tests + video evidence        |
 
 ### Install Dependencies
 

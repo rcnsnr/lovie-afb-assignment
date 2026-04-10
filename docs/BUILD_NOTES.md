@@ -20,6 +20,14 @@ Use this file as a compact log of meaningful execution decisions.
 - Correction: Renamed to `next.config.js` with JSDoc type annotation.
 - Why it mattered: Dev server would not start without this fix.
 
+- Date: 2026-04-10
+- Problem: `prisma init` fails on Node 24 with `(0 , CSe.isError) is not a function`
+  (bundled CLI incompatibility). Isolated to the `init` subcommand only.
+- Correction: Wrote `prisma/schema.prisma` manually. `prisma generate`, `migrate`, and
+  `db seed` all work correctly — only `prisma init` is affected.
+- Why it mattered: Build pipeline (`prisma generate && prisma migrate deploy`) is
+  unaffected; this is a developer ergonomics issue only.
+
 ## Spec / Implementation Drift Notes
 
 None yet.

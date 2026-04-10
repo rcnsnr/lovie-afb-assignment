@@ -27,7 +27,7 @@
   `api/` route groups)
 - docs impact: update `docs/BUILD_NOTES.md` with chosen Next.js version and init command
 
-### T002
+### T002 ✓
 
 - objective: Add and configure all required runtime dependencies: Prisma, iron-session,
   Zod, bcryptjs, and their TypeScript types.
