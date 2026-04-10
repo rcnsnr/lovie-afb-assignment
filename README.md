@@ -148,13 +148,24 @@ git config core.hooksPath .githooks
 
 ## End-to-End Testing
 
-Run E2E tests:
+Requires a running app (local or deployed) and a seeded database.
+
+Set `BASE_URL` if testing against a deployed instance (defaults to `http://localhost:3000`):
 
 ```bash
+# Run all E2E tests (starts local dev server first)
+npm run dev &
 npx playwright test
+
+# Run against deployed demo
+BASE_URL=https://your-demo.vercel.app npx playwright test
+
+# Run smoke test only
+npx playwright test e2e/smoke.spec.ts
 ```
 
-If package scripts are used instead, replace this command with the actual final command.
+Video artifacts are written to `test-results/` for every test run.
+Traces are retained on failure for debugging in Playwright Trace Viewer.
 
 ### Collect E2E Evidence
 

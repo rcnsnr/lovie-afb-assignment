@@ -40,7 +40,7 @@
 - required review: confirm no extraneous packages added beyond the plan's list
 - docs impact: update `README.md` prerequisites section with final package list
 
-### T003
+### T003 ✓
 
 - objective: Configure Playwright for E2E tests — `playwright.config.ts` with
   `video: 'on'`, `trace: 'retain-on-failure'`, baseURL from env, and the `e2e/`
