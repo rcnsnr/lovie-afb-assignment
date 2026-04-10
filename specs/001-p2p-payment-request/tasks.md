@@ -190,7 +190,7 @@ protected pages require a valid session.
 - required review: confirm form shows field-level error (not alert/toast) on bad creds
 - docs impact: none
 
-### T012
+### T012 ✓
 
 - objective: Implement `app/(protected)/layout.tsx` — server component that calls
   `requireSession`; redirects to `/login` on missing session.
