@@ -495,7 +495,7 @@ are collected for reviewer evidence.
 - required review: confirm Carol's session is set up independently from Alice/Bob
 - docs impact: none
 
-### T029
+### T029 ✓
 
 - objective: E2E tests — dashboards, validation, not-found (AC8, AC9, AC10, AC11,
   AC12, AC13). Outgoing dashboard shows correct requests in reverse-chronological order.
