@@ -14,7 +14,7 @@ Use this document to show how AI was used in a controlled way.
 | Edge-case audit   | Claude Code | 6 gaps found; corrections applied to spec/plan only  |
 | Task breakdown    | Claude Code | 31 tasks across 9 phases; full AC-to-task mapping    |
 | Artifact analysis | Claude Code | 0 CRITICAL, 6 findings; 100% AC coverage confirmed   |
-| Implementation    | Claude Code | Phase 5 complete (T015–T017); 0 corrections required |
+| Implementation    | Claude Code | Phase 6 complete (T018–T022); 0 corrections required |
 | Review            |             | Not started                                          |
 | Evidence prep     |             | Not started                                          |
 
@@ -153,10 +153,23 @@ Use this document to show how AI was used in a controlled way.
   `phase_closeout.sh` all 5 checks pass.
 - Phase 5 implementation (T015–T017) is complete. No corrections required.
   `phase_closeout.sh` all 5 checks pass.
+- Phase 6 implementation (T018–T022) is complete. No corrections required.
+  `phase_closeout.sh` all 5 checks pass.
 - AI drove all file creation; human review focused on confirming directory structure
   against the plan and approving the `prisma init` workaround decision.
 
 ## Recent Updates
+
+### 2026-04-11 — Phase 6 request detail + action routes (T018–T022)
+
+- T018: `GET /api/requests/[id]` — read route; 404 for unknown; effective status applied.
+- T019–T021: pay/decline/cancel — CR1+CR2 conditional write (`WHERE status='PENDING' AND
+expiresAt > NOW()`); `count === 0` → 409; second `findUnique` for DTO (U3 pattern).
+  Actor check: recipient for pay/decline, requester for cancel.
+- T022: Detail page — client component; fetches request + session in parallel; role derived
+  from DTO fields server-side; action buttons shown only for correct actor on PENDING;
+  inline error + server refresh on failure.
+- 0 corrections required. `phase_closeout.sh` all 5 checks pass.
 
 ### 2026-04-11 — Phase 5 dashboard views + list APIs (T015–T017)
 

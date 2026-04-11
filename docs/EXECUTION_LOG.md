@@ -118,6 +118,50 @@ Keep entries short and factual.
 
 ---
 
+### 2026-04-11 — Phase 6 complete: Request detail + action routes (T018–T022)
+
+#### What was done
+
+- T018: `GET /api/requests/[id]` — any authenticated user; 404 for unknown ID;
+  `toPaymentRequestDTO()` applies `getEffectiveStatus()` on read.
+- T019: `POST /api/requests/[id]/pay` — recipient only; conditional write
+  `WHERE status='PENDING' AND expiresAt > NOW()` (CR1+CR2); `paidAt` set atomically;
+  `count === 0` → 409; second `findUnique` for DTO (U3 pattern).
+- T020: `POST /api/requests/[id]/decline` — same CR1+CR2 pattern; recipient only;
+  sets `declinedAt`.
+- T021: `POST /api/requests/[id]/cancel` — same CR1+CR2 pattern; requester only;
+  sets `cancelledAt`.
+- T022: `app/(protected)/requests/[id]/page.tsx` — client component; fetches
+  `/api/requests/[id]` + `/api/auth/me` in parallel; role derived from
+  `currentUserId === req.recipientId / req.requesterId`; action buttons shown only when
+  `isPending && (isRecipient || isRequester)`; not-found state; inline action error with
+  server state refresh on failure.
+
+#### Why it was done
+
+- Completes Phase 6 (AC2, AC3, AC4, AC6, AC7): full lifecycle UI and all action routes.
+- Conditional write pattern (CR1+CR2) eliminates double-transition and expiration race.
+
+#### Artifacts changed
+
+- `app/api/requests/[id]/route.ts` — new (T018)
+- `app/api/requests/[id]/pay/route.ts` — new (T019)
+- `app/api/requests/[id]/decline/route.ts` — new (T020)
+- `app/api/requests/[id]/cancel/route.ts` — new (T021)
+- `app/(protected)/requests/[id]/page.tsx` — new (T022)
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` — all 5 checks pass.
+
+#### Notes
+
+- 0 corrections required. All outputs accepted as generated.
+- T019–T021 use identical conditional write structure; action-specific fields only differ.
+- Role check in T022 is derived from DTO fields (`recipientId`, `requesterId`), not client props.
+
+---
+
 ### 2026-04-11 — Phase 5 complete: Dashboard views + list APIs (T015–T017)
 
 #### What was done
