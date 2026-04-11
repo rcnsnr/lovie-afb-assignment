@@ -14,7 +14,7 @@ Use this document to show how AI was used in a controlled way.
 | Edge-case audit   | Claude Code | 6 gaps found; corrections applied to spec/plan only  |
 | Task breakdown    | Claude Code | 31 tasks across 9 phases; full AC-to-task mapping    |
 | Artifact analysis | Claude Code | 0 CRITICAL, 6 findings; 100% AC coverage confirmed   |
-| Implementation    | Claude Code | Phase 3 complete (T009–T012); 0 corrections required |
+| Implementation    | Claude Code | Phase 4 complete (T013–T014); 0 corrections required |
 | Review            |             | Not started                                          |
 | Evidence prep     |             | Not started                                          |
 
@@ -149,10 +149,24 @@ Use this document to show how AI was used in a controlled way.
   applied to Supabase via MCP; local migration file committed.
 - Phase 3 implementation (T009–T012) is complete. No corrections required.
   `phase_closeout.sh` all 5 checks pass.
+- Phase 4 implementation (T013–T014) is complete. No corrections required.
+  `phase_closeout.sh` all 5 checks pass.
 - AI drove all file creation; human review focused on confirming directory structure
   against the plan and approving the `prisma init` workaround decision.
 
 ## Recent Updates
+
+### 2026-04-11 — Phase 4 create request API + new request page (T013–T014)
+
+- T013: `POST /api/requests` — Zod schema with single-chain `amountDollars` transform (IG2),
+  self-request check via `recipient.id === session.userId` UUID comparison (IG1), 7-day
+  `expiresAt`, returns 201 with `toPaymentRequestDTO()`. Shared `lib/dto.ts` created for
+  reuse across T015–T022.
+- T014: `app/(protected)/requests/new/page.tsx` — client form; dollar input with `$` prefix
+  and `inputMode="decimal"`; note textarea with 200-char counter; client-side pre-validation
+  mirroring server; field-level Zod errors on 400; form-level errors for 404 and 422;
+  loading state; redirect to `/requests/[id]` on 201.
+- 0 corrections required. `phase_closeout.sh` all 5 checks pass.
 
 ### 2026-04-11 — Phase 3 auth routes + login UI + session guard (T009–T012)
 

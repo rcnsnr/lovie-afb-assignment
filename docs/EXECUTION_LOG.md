@@ -118,6 +118,42 @@ Keep entries short and factual.
 
 ---
 
+### 2026-04-11 — Phase 4 complete: Create request API + new request page (T013–T014)
+
+#### What was done
+
+- T013: `POST /api/requests` route — Zod validation with single-chain `amountDollars` transform
+  (IG2), self-request check via UUID not email (IG1), 7-day expiry, returns DTO via
+  `toPaymentRequestDTO()`; shared `lib/dto.ts` created ahead of T015–T022 reuse.
+- T014: `app/(protected)/requests/new/page.tsx` — client form with dollar input (`inputMode="decimal"`,
+  `$` prefix), optional note with char counter, client-side pre-validation mirroring server rules,
+  field-level errors from Zod issues (400), form-level errors for 404 (unknown recipient) and
+  422 (self-request), loading state, redirect to `/requests/[id]` on 201.
+
+#### Why it was done
+
+- Core create-request flow needed before dashboards and detail pages.
+- `lib/dto.ts` extracted early to avoid DTO duplication across all request routes.
+
+#### Artifacts changed
+
+- `app/api/requests/route.ts` — new file (T013)
+- `lib/dto.ts` — new file (shared DTO builder)
+- `app/(protected)/requests/new/page.tsx` — new file (T014)
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` — all 5 checks pass:
+  markdownlint, prettier, eslint, `tsc --noEmit`, `prisma validate` + `prisma generate`.
+
+#### Notes
+
+- 0 corrections required. Both tasks accepted as generated.
+- Self-request check uses `recipient.id === session.userId` (UUID), not email string — IG1 applied.
+- Single Zod chain on `amountDollars` (IG2) applied directly in the route schema.
+
+---
+
 ### 2026-04-11 — Phase 3 complete: Auth routes + login UI + session guard (T009–T012)
 
 #### What was done
