@@ -207,6 +207,33 @@ This is expected to collect:
 - trace artifacts
 - evidence output that can be linked from the README and submission note
 
+## Deployment
+
+### Vercel + Supabase
+
+The build command (`npm run build`) runs `prisma generate && prisma migrate deploy && next build`.
+Vercel executes this automatically on each push.
+
+**Required environment variables in Vercel dashboard:**
+
+| Variable         | Value                                                                                 |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| `DATABASE_URL`   | Supabase Transaction pooler URL (port 6543) with `?pgbouncer=true&connect_timeout=10` |
+| `DIRECT_URL`     | Supabase direct URL (port 5432) — used by Prisma migrations only                      |
+| `SESSION_SECRET` | Random string ≥ 32 characters (`openssl rand -hex 32`)                                |
+
+**First deploy checklist:**
+
+1. Add env vars in Vercel dashboard (Production + Preview).
+2. Push to trigger build — migrations run automatically.
+3. Seed the database once:
+
+   ```bash
+   DIRECT_URL=<supabase_direct_url> DATABASE_URL=<same> npx prisma db seed
+   ```
+
+4. Confirm `/login` loads and `alice@example.com` / `demo1234` signs in.
+
 ## Assumptions and Tradeoffs
 
 See:

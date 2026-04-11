@@ -515,7 +515,7 @@ are collected for reviewer evidence.
 
 ## Phase 9 — Deployment and Evidence
 
-### T030
+### T030 ✓
 
 - objective: Configure Vercel deployment — `vercel.json` if needed, `build` command
   includes `prisma generate && prisma migrate deploy`, set required env vars in Vercel

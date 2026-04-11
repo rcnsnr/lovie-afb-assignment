@@ -28,6 +28,25 @@ Use this file as a compact log of meaningful execution decisions.
 - Why it mattered: Build pipeline (`prisma generate && prisma migrate deploy`) is
   unaffected; this is a developer ergonomics issue only.
 
+## Deployment: Vercel + Supabase
+
+- Date: 2026-04-11
+- Build command: `npm run build` → expands to `prisma generate && prisma migrate deploy && next build`
+- Vercel auto-detects Next.js; `vercel.json` makes the build command explicit.
+- Prisma `directUrl` added to `prisma/schema.prisma` (Supabase pooler pattern):
+  - `DATABASE_URL` = Transaction pooler URL (port 6543, `?pgbouncer=true&connect_timeout=10`)
+    — used at runtime by the Next.js API routes.
+  - `DIRECT_URL` = Session/direct URL (port 5432, no pgbouncer params)
+    — used by `prisma migrate deploy` and `prisma generate` only.
+- Required Vercel environment variables:
+  - `DATABASE_URL` — Supabase Transaction pooler URL with pgbouncer params
+  - `DIRECT_URL` — Supabase direct URL without pgbouncer params
+  - `SESSION_SECRET` — minimum 32 characters; generate with `openssl rand -hex 32`
+- Seed is NOT run automatically on deploy. Run manually once against the production DB:
+  `DATABASE_URL=<direct_url> npx prisma db seed`
+- Impact: Without `directUrl`, `prisma migrate deploy` may fail when `DATABASE_URL`
+  routes through pgbouncer (extended query protocol incompatibility).
+
 ## Spec / Implementation Drift Notes
 
 None yet.
