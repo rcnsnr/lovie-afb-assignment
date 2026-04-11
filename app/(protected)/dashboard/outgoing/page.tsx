@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { toPaymentRequestDTO } from "@/lib/dto";
 import { PaymentRequestDTO } from "@/lib/dto";
 import { redirect } from "next/navigation";
+import { ExpiryCountdown } from "@/components/ExpiryCountdown";
 
 function StatusBadge({ status }: { status: string }) {
   const colours: Record<string, string> = {
@@ -22,15 +23,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function ExpiryCountdown({ expiresAt }: { expiresAt: string }) {
-  const ms = new Date(expiresAt).getTime() - Date.now();
-  if (ms <= 0) return null;
-  const hours = Math.floor(ms / 1000 / 60 / 60);
-  const days = Math.floor(hours / 24);
-  const label = days > 0 ? `${days}d left` : `${hours}h left`;
-  return <span className="text-xs text-gray-400">{label}</span>;
-}
-
 function RequestRow({ req }: { req: PaymentRequestDTO }) {
   return (
     <Link
@@ -44,7 +36,7 @@ function RequestRow({ req }: { req: PaymentRequestDTO }) {
       <div className="ml-4 flex shrink-0 flex-col items-end gap-1">
         <span className="text-sm font-semibold text-gray-900">{req.amountDisplay}</span>
         <StatusBadge status={req.status} />
-        {req.status === "PENDING" && <ExpiryCountdown expiresAt={req.expiresAt} />}
+        <ExpiryCountdown expiresAt={req.expiresAt} status={req.status} />
       </div>
     </Link>
   );

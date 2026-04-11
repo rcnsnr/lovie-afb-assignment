@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { PaymentRequestDTO } from "@/lib/dto";
+import { ExpiryCountdown } from "@/components/ExpiryCountdown";
 
 function StatusBadge({ status }: { status: string }) {
   const colours: Record<string, string> = {
@@ -20,15 +21,6 @@ function StatusBadge({ status }: { status: string }) {
       {status}
     </span>
   );
-}
-
-function ExpiryCountdown({ expiresAt }: { expiresAt: string }) {
-  const ms = new Date(expiresAt).getTime() - Date.now();
-  if (ms <= 0) return null;
-  const hours = Math.floor(ms / 1000 / 60 / 60);
-  const days = Math.floor(hours / 24);
-  const label = days > 0 ? `Expires in ${days}d` : `Expires in ${hours}h`;
-  return <span className="text-sm text-gray-500">{label}</span>;
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
@@ -134,7 +126,7 @@ export default function RequestDetailPage() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-2xl font-bold text-gray-900">{req.amountDisplay}</p>
-              {isPending && <ExpiryCountdown expiresAt={req.expiresAt} />}
+              <ExpiryCountdown expiresAt={req.expiresAt} status={req.status} />
             </div>
             <StatusBadge status={req.status} />
           </div>
