@@ -35,14 +35,20 @@ It should show a controlled build process:
 
 ## Live Demo
 
-- Demo URL: `<ADD_DEMO_URL>`
-- Optional demo credentials or demo-user notes: `<ADD_IF_NEEDED>`
+- Demo URL: `<ADD_DEMO_URL_AFTER_VERCEL_DEPLOY>`
+- Demo credentials: `alice@example.com` / `demo1234` · `bob@example.com` / `demo1234` · `carol@example.com` / `demo1234`
 
 ## Evidence
 
-- E2E videos: `<ADD_VIDEO_LINK_OR_PATH>`
-- Playwright trace: `<ADD_TRACE_LINK_OR_PATH>`
+- E2E videos: `artifacts/videos/` — 15 `.webm` files, one per test (all ACs)
+- Playwright traces: `artifacts/traces/` — 15 `.zip` files, viewable in [Playwright Trace Viewer](https://trace.playwright.dev)
 - Walkthrough video: `<ADD_WALKTHROUGH_LINK_OR_PATH>`
+
+> **Evidence status**: Video and trace artifacts are collected for all 15 tests.
+> The smoke test passes against the local dev server. Full green E2E run requires
+> the Supabase database to be active and seeded (`npx prisma db seed`). Once the
+> database is reachable, re-run `bash scripts/3-run_e2e_evidence.sh .` to collect
+> passing-flow artifacts.
 
 ## Tech Stack
 

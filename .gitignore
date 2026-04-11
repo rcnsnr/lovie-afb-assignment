@@ -10,9 +10,11 @@ out/
 .env.local
 .env.*.local
 
-# Playwright artifacts (kept in e2e-evidence/ for submission; raw output ignored)
+# Playwright artifacts — raw output and collected artifacts are gitignored
+# Re-run bash scripts/3-run_e2e_evidence.sh after seeding the DB for passing-flow evidence
 test-results/
 playwright-report/
+artifacts/
 
 # Vercel
 .vercel/

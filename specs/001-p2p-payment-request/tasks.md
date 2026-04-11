@@ -531,7 +531,7 @@ are collected for reviewer evidence.
 - docs impact: update `README.md` with demo URL; update `docs/BUILD_NOTES.md` with
   any deployment gotchas
 
-### T031
+### T031 ✓
 
 - objective: Run `scripts/3-run_e2e_evidence.sh` against the deployed demo or local
   dev. Confirm video artifacts and Playwright traces are produced and stored in
