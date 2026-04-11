@@ -118,6 +118,47 @@ Keep entries short and factual.
 
 ---
 
+### 2026-04-11 — Phase 7 complete: Shareable link + expiry countdown (T023–T024)
+
+#### What was done
+
+- T023: `middleware.ts` — Edge-compatible; matches `/requests/:id*`; checks `p2p-session`
+  cookie by presence; redirects to `/login?next=/requests/<id>` when absent.
+  Login page updated with `useSearchParams()` to read `?next=`; `isSafeReturnPath()`
+  guard (must start with `/`, must not start with `//`) prevents open redirect;
+  redirects to `next` on success or falls back to `/dashboard/outgoing`.
+- T024: `components/ExpiryCountdown.tsx` — `"use client"` component; accepts `expiresAt`
+  ISO string and `status`; returns `null` for non-PENDING status and when `ms <= 0`;
+  ticks every second via `setInterval` — display-only, no server calls; inline versions
+  removed from both dashboard pages and detail page.
+
+#### Why it was done
+
+- T023 completes AC12 (shareable link unauthenticated flow).
+- T024 ensures EXPIRED badge and countdown are consistently rendered from the same
+  component across all views; confirms display-only constraint is enforced.
+
+#### Artifacts changed
+
+- `middleware.ts` — new file (T023)
+- `app/(auth)/login/page.tsx` — `?next=` param + open-redirect guard (T023)
+- `components/ExpiryCountdown.tsx` — new file (T024)
+- `app/(protected)/dashboard/outgoing/page.tsx` — uses shared component (T024)
+- `app/(protected)/dashboard/incoming/page.tsx` — uses shared component (T024)
+- `app/(protected)/requests/[id]/page.tsx` — uses shared component (T024)
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` — all 5 checks pass.
+
+#### Notes
+
+- 0 corrections required. All outputs accepted as generated.
+- Middleware does a cookie-presence check only (not session decryption) — sufficient for
+  Edge Runtime; full session validation still happens in route handlers/pages.
+
+---
+
 ### 2026-04-11 — Phase 6 complete: Request detail + action routes (T018–T022)
 
 #### What was done

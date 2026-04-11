@@ -14,7 +14,7 @@ Use this document to show how AI was used in a controlled way.
 | Edge-case audit   | Claude Code | 6 gaps found; corrections applied to spec/plan only  |
 | Task breakdown    | Claude Code | 31 tasks across 9 phases; full AC-to-task mapping    |
 | Artifact analysis | Claude Code | 0 CRITICAL, 6 findings; 100% AC coverage confirmed   |
-| Implementation    | Claude Code | Phase 6 complete (T018–T022); 0 corrections required |
+| Implementation    | Claude Code | Phase 7 complete (T023–T024); 0 corrections required |
 | Review            |             | Not started                                          |
 | Evidence prep     |             | Not started                                          |
 
@@ -155,10 +155,22 @@ Use this document to show how AI was used in a controlled way.
   `phase_closeout.sh` all 5 checks pass.
 - Phase 6 implementation (T018–T022) is complete. No corrections required.
   `phase_closeout.sh` all 5 checks pass.
+- Phase 7 implementation (T023–T024) is complete. No corrections required.
+  `phase_closeout.sh` all 5 checks pass.
 - AI drove all file creation; human review focused on confirming directory structure
   against the plan and approving the `prisma init` workaround decision.
 
 ## Recent Updates
+
+### 2026-04-11 — Phase 7 shareable link + expiry countdown (T023–T024)
+
+- T023: `middleware.ts` — Edge-compatible cookie-presence check; redirects to
+  `/login?next=<path>` for unauthenticated `/requests/:id` visits. Login page updated
+  with `isSafeReturnPath()` open-redirect guard and `?next=` redirect on success.
+- T024: `components/ExpiryCountdown.tsx` — shared `"use client"` component; ticks every
+  second via `setInterval`; display-only (no server calls); returns null for non-PENDING
+  and expired requests. Inline versions removed from all three pages.
+- 0 corrections required. `phase_closeout.sh` all 5 checks pass.
 
 ### 2026-04-11 — Phase 6 request detail + action routes (T018–T022)
 
