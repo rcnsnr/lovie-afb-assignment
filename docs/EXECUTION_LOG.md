@@ -118,6 +118,44 @@ Keep entries short and factual.
 
 ---
 
+### 2026-04-11 — Phase 8 complete: Full E2E test suite (T025–T029)
+
+#### What was done
+
+- T025: `e2e/happy-path.spec.ts` — AC1+AC2; Alice creates $15 request, Bob pays, both verify PAID.
+- T026: `e2e/actions.spec.ts` — AC3 (Bob declines), AC4 (Alice cancels), wrong-actor guard (Decline not visible for requester).
+- T027: `e2e/expiration.spec.ts` — AC5 UI (EXPIRED badge, no buttons on seed fixture) + AC5 server (pay POST → 409 via `page.evaluate`).
+- T028: `e2e/authorization.spec.ts` — AC6 (Carol observer sees details, no buttons), AC7 (Alice pay POST on own request → 403).
+- T029: `e2e/validation.spec.ts` — AC8 (outgoing dashboard reverse-chrono via `innerText.indexOf`), AC9 (incoming shows received), AC10 (amount 0 → inline error), AC11 (self-request → 422 inline error), AC12 (nonexistent UUID → not-found state), AC13 (`page.fill()` bypasses `maxLength` → client catches 201-char note).
+
+#### Why it was done
+
+- All 13 ACs now have explicit Playwright coverage.
+- `context.clearCookies()` used for clean session switching between Alice/Bob/Carol within tests.
+- Seed fixture (`00000000-0000-0000-0000-000000000001`) provides stable past-expiry record for AC5 without time manipulation.
+- AC13 uses `page.fill()` to bypass HTML `maxLength=200`; client-side JS catches `note.length > 200` and shows inline error.
+
+#### Artifacts changed
+
+- `e2e/happy-path.spec.ts` (new)
+- `e2e/actions.spec.ts` (new)
+- `e2e/expiration.spec.ts` (new)
+- `e2e/authorization.spec.ts` (new)
+- `e2e/validation.spec.ts` (new)
+- `specs/001-p2p-payment-request/tasks.md` — T025–T029 marked ✓
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` — all 5 checks pass (markdownlint, prettier, eslint, typecheck, prisma validate+generate).
+- No runtime E2E execution yet — requires live Supabase + seeded DB for full green run.
+
+#### Notes
+
+- T030 (Vercel deployment) and T031 (evidence collection) are the remaining tasks.
+- Phase 8 completes the E2E coverage milestone; ready for deployment phase.
+
+---
+
 ### 2026-04-11 — Phase 7 complete: Shareable link + expiry countdown (T023–T024)
 
 #### What was done

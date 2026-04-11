@@ -162,6 +162,17 @@ Use this document to show how AI was used in a controlled way.
 
 ## Recent Updates
 
+### 2026-04-11 — Phase 8 full E2E test suite (T025–T029)
+
+- T025: `e2e/happy-path.spec.ts` — AC1+AC2; `loginAs` helper + `context.clearCookies()` for user switching; asserts PAID transition and role-based button visibility.
+- T026: `e2e/actions.spec.ts` — AC3 (decline), AC4 (cancel), wrong-actor guard; `createRequest` helper extracted for reuse; all terminal-state button assertions.
+- T027: `e2e/expiration.spec.ts` — AC5 UI (EXPIRED badge on seed fixture `00000000-0000-0000-0000-000000000001`) + AC5 server (pay POST via `page.evaluate` → 409).
+- T028: `e2e/authorization.spec.ts` — AC6 (Carol observer zero buttons), AC7 (Alice pay POST on own request → 403 via `page.evaluate`).
+- T029: `e2e/validation.spec.ts` — AC8 ordering (`innerText.indexOf` comparison), AC9 incoming, AC10 zero-amount, AC11 self-request, AC12 not-found, AC13 note overflow via `page.fill()` bypass.
+- Notable pattern: `page.fill()` bypasses HTML `maxLength`; client-side JS still catches `note.length > 200` — used as the AC13 test vector.
+- 0 corrections required. `phase_closeout.sh` all 5 checks pass.
+- E2E execution pending live Supabase deployment; static validation (typecheck, lint, prisma) all pass.
+
 ### 2026-04-11 — Phase 7 shareable link + expiry countdown (T023–T024)
 
 - T023: `middleware.ts` — Edge-compatible cookie-presence check; redirects to
