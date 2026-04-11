@@ -466,7 +466,7 @@ are collected for reviewer evidence.
 - required review: confirm DECLINED and CANCELLED are terminal — no further actions shown
 - docs impact: none
 
-### T027
+### T027 ✓
 
 - objective: E2E test — expiration (AC5). Load the pre-seeded past-expiry request
   (status=PENDING, expiresAt yesterday). Bob tries to pay → server rejects. Assert
@@ -481,7 +481,7 @@ are collected for reviewer evidence.
   this test runs
 - docs impact: none
 
-### T028
+### T028 ✓
 
 - objective: E2E tests — authorization and Observer (AC6, AC7). Carol visits Alice's
   request via shareable link → sees detail, no action buttons. Alice tries to pay her
