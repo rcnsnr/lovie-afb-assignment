@@ -118,6 +118,48 @@ Keep entries short and factual.
 
 ---
 
+### 2026-04-11 — Phase 5 complete: Dashboard views + list APIs (T015–T017)
+
+#### What was done
+
+- T015: `GET /api/requests` (outgoing list) added to existing route file; new
+  `app/api/requests/incoming/route.ts` for incoming list. Both query with
+  `include: { requester, recipient }`, sort `createdAt DESC`, map via
+  `toPaymentRequestDTO()` so `getEffectiveStatus()` is applied to every row — EXPIRED
+  items appear in lists, not filtered.
+- T016: `app/(protected)/dashboard/outgoing/page.tsx` and
+  `app/(protected)/dashboard/incoming/page.tsx` — server components; `StatusBadge`
+  with per-status colour mapping; `ExpiryCountdown` computed at render time from
+  `expiresAt` (display-only, no polling); `amountDisplay` via DTO; tab nav between
+  dashboards; empty state with CTA; row links to `/requests/[id]`.
+- T017: `app/page.tsx` root redirect was already present from prior session; confirmed
+  correct — auth → `/dashboard/outgoing`, unauth → `/login`.
+
+#### Why it was done
+
+- Completes Phase 5 (AC8, AC9): both dashboard views now visible and functional.
+- List API endpoints required before dashboard pages can fetch data.
+
+#### Artifacts changed
+
+- `app/api/requests/route.ts` — `GET` handler added
+- `app/api/requests/incoming/route.ts` — new file
+- `app/(protected)/dashboard/outgoing/page.tsx` — new file
+- `app/(protected)/dashboard/incoming/page.tsx` — new file
+- `app/page.tsx` — already correct; no change
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` — all 5 checks pass.
+
+#### Notes
+
+- 0 corrections required. All outputs accepted as generated.
+- `ExpiryCountdown` is server-side render-time calculation — no client state, no polling.
+- `formatCents` applied via DTO `amountDisplay` field throughout.
+
+---
+
 ### 2026-04-11 — Phase 4 complete: Create request API + new request page (T013–T014)
 
 #### What was done
