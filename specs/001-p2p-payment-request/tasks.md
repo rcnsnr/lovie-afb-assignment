@@ -438,7 +438,7 @@ return path). (AC5, AC6, AC12)
 **Story goal**: All 13 ACs have explicit Playwright coverage. Video and trace artifacts
 are collected for reviewer evidence.
 
-### T025
+### T025 ✓
 
 - objective: E2E test — happy path create + pay (AC1, AC2). Alice logs in, creates
   request to Bob for $15.00 with note "Dinner". Bob logs in, navigates to incoming
@@ -453,7 +453,7 @@ are collected for reviewer evidence.
   confirm outgoing dashboard shows PAID after Bob pays
 - docs impact: update `docs/VIDEO_EVIDENCE_GUIDE.md` with artifact path
 
-### T026
+### T026 ✓
 
 - objective: E2E tests — decline (AC3) and cancel (AC4). Two separate test cases.
   Bob declines a request from Alice. Alice cancels her own request.
