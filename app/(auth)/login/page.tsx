@@ -1,10 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+
+function isSafeReturnPath(path: string): boolean {
+  // Prevent open redirect: must be relative and not start with //
+  return path.startsWith("/") && !path.startsWith("//");
+}
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +29,9 @@ export default function LoginPage() {
       });
 
       if (res.ok) {
-        router.push("/dashboard/outgoing");
+        const next = searchParams.get("next");
+        const destination = next && isSafeReturnPath(next) ? next : "/dashboard/outgoing";
+        router.push(destination);
       } else {
         const data = await res.json();
         setError(data.error ?? "Login failed");
