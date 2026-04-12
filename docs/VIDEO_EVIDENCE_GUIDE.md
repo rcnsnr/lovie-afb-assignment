@@ -11,14 +11,21 @@ The reviewer needs confidence that:
 - the workflow was controlled
 - AI usage was structured rather than careless
 
-## Recommended Evidence Pack
+## Actual Evidence Pack (as delivered)
 
-Produce these artifacts:
+Artifacts are gitignored (binary files). Re-collect with:
 
-1. `artifacts/videos/e2e-happy-path.mp4`
-2. `artifacts/videos/e2e-expired-request.mp4`
-3. `artifacts/traces/trace.zip`
-4. `artifacts/walkthrough/walkthrough-build-and-evidence.mp4`
+```bash
+BASE_URL=https://lovie-afb-assignment.vercel.app bash scripts/3-run_e2e_evidence.sh .
+```
+
+This produces 15 named `.webm` videos and 15 named `.zip` traces in `artifacts/`:
+
+- `artifacts/videos/happy-path-AC1-AC2-*.webm` — create request + pay flow
+- `artifacts/videos/expiration-AC5-*.webm` — expired request badge + server 409
+- `artifacts/videos/actions-AC3-*.webm`, `actions-AC4-*.webm` — decline + cancel
+- `artifacts/videos/authorization-AC6-*.webm`, `authorization-AC7-*.webm` — observer + wrong actor
+- `artifacts/traces/*.zip` — all 15 traces, viewable at <https://trace.playwright.dev>
 
 ## Strong Evidence Pattern
 

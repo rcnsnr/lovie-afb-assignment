@@ -14,9 +14,9 @@ Use this document to show how AI was used in a controlled way.
 | Edge-case audit   | Claude Code | 6 gaps found; corrections applied to spec/plan only  |
 | Task breakdown    | Claude Code | 31 tasks across 9 phases; full AC-to-task mapping    |
 | Artifact analysis | Claude Code | 0 CRITICAL, 6 findings; 100% AC coverage confirmed   |
-| Implementation    | Claude Code | Phase 7 complete (T023–T024); 0 corrections required |
-| Review            |             | Not started                                          |
-| Evidence prep     |             | Not started                                          |
+| Implementation    | Claude Code | T001–T031 complete across 9 phases                   |
+| Review            | Claude Code | `/ship-check` skill; final audit before submission   |
+| Evidence prep     | Claude Code | 15/15 E2E green on production; 15 videos + traces    |
 
 ## Representative Prompt Patterns
 

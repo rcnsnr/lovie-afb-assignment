@@ -45,8 +45,8 @@ It should show a controlled build process:
 - Walkthrough video: _(not provided — E2E videos in `artifacts/videos/` serve as evidence)_
 
 > **Evidence status**: 15/15 tests pass against the production deployment at
-> `https://lovie-afb-assignment.vercel.app`. Video and trace artifacts are in
-> `artifacts/videos/` and `artifacts/traces/`. Re-run at any time:
+> `https://lovie-afb-assignment.vercel.app`. Video and trace artifacts are gitignored
+> (binary files — not in git). Re-collect after cloning:
 > `BASE_URL=https://lovie-afb-assignment.vercel.app bash scripts/3-run_e2e_evidence.sh .`
 
 ## Tech Stack
