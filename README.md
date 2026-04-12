@@ -35,14 +35,14 @@ It should show a controlled build process:
 
 ## Live Demo
 
-- Demo URL: `<ADD_DEMO_URL_AFTER_VERCEL_DEPLOY>`
+- Demo URL: `https://lovie-afb-assignment.vercel.app`
 - Demo credentials: `alice@example.com` / `demo1234` · `bob@example.com` / `demo1234` · `carol@example.com` / `demo1234`
 
 ## Evidence
 
 - E2E videos: `artifacts/videos/` — 15 `.webm` files, one per test (all ACs)
 - Playwright traces: `artifacts/traces/` — 15 `.zip` files, viewable in [Playwright Trace Viewer](https://trace.playwright.dev)
-- Walkthrough video: `<ADD_WALKTHROUGH_LINK_OR_PATH>`
+- Walkthrough video: _(not provided — E2E videos in `artifacts/videos/` serve as evidence)_
 
 > **Evidence status**: 15/15 tests pass against the production deployment at
 > `https://lovie-afb-assignment.vercel.app`. Video and trace artifacts are in

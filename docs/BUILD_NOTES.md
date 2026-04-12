@@ -49,13 +49,45 @@ Use this file as a compact log of meaningful execution decisions.
 - Helper script: `scripts/set-vercel-env.sh` now syncs production first and treats
   preview sync as best-effort from `.env.local` because Vercel may require branch-scoped
   preview vars in the dashboard.
-- Vercel runtime diagnosis: after the host mismatch was corrected, the deployment now
-  reaches Supabase but fails authentication at the database server, so the remaining
-  blocker is the Supabase DB credential value rather than the app code.
+
+## Deployment Recovery: Supabase Pooler Shard + Credentials
+
+- Date: 2026-04-12
+- Problem: Sign-in returned 500 on production. Three sequential root causes:
+  1. Password contained a literal `@` character making the connection URL ambiguous for parsers.
+     Fixed with `%40` percent-encoding.
+  2. Password itself was wrong — reconstructed by inference across sessions rather than reading
+     from the Supabase dashboard. Retrieving the real password from the dashboard resolved this.
+  3. Pooler host was `aws-0-us-east-2.pooler.supabase.com` but this project routes to the
+     `aws-1` shard. Supavisor returned `FATAL: Tenant or user not found` until the correct
+     shard was used.
+- Additional finding: Vercel serverless functions are IPv4-only. Supabase free tier direct
+  connections (`db.*.supabase.co:5432`) are IPv6-only and cannot be reached from Vercel.
+  The Transaction pooler (Supavisor) at port 6543 is IPv4-reachable and must be used for
+  all runtime DB connections. `DIRECT_URL` (port 5432) is still correct for migrations
+  because those run from the developer's machine, not from Vercel.
+- Lesson: Always copy the connection string directly from the Supabase dashboard connection
+  string UI. Never reconstruct it from memory or partial context.
+- Result: Production sign-in fully restored; 15/15 E2E tests green on
+  `https://lovie-afb-assignment.vercel.app`.
+
+## E2E Locator Fixes (Post-Evidence Run)
+
+- Date: 2026-04-12
+- Problem: 6 of 15 E2E tests failed after first evidence run:
+  1. `getByText('PAID')` matched status badge AND "Paid at [timestamp]" span (Playwright
+     default is case-insensitive substring match). Same issue with DECLINED, CANCELLED, EXPIRED.
+  2. Dashboard locators (`$15.00`, `$30.00`, note text) matched multiple entries because
+     tests accumulate real records across runs on a shared live DB.
+  3. AC13: `maxLength={200}` on the textarea silently capped Playwright's `fill()` at 200
+     chars; the `note.length > 200` client-side check never triggered.
+- Fixes: `{ exact: true }` on all status badge assertions; `.first()` on dashboard amount/note
+  locators; removed `maxLength` attribute from textarea (JS validation is the enforced limit).
+- Result: 15/15 clean pass on production after redeploy.
 
 ## Spec / Implementation Drift Notes
 
-None yet.
+None.
 
 ## Workflow Enhancements
 
@@ -64,10 +96,3 @@ None yet.
 - Reason: Phase-end validation and reviewer-facing log sync were being done manually and
   were easy to forget. The new workflow standardizes closeout into one repeatable path.
 - Impact: Phase boundaries now have a default validation + logging flow before commit/push.
-
-## Deployment Recovery: Supabase Password Refresh
-
-- Date: 2026-04-12
-- Action: Refreshed the Supabase database password in the local env files and re-synced Vercel production env vars.
-- Result: Production redeploy completed successfully and `/api/auth/login` now returns the seeded Alice user.
-- Remaining note: Preview env var scoping still needs manual Vercel dashboard handling if preview deployments are required for the feature branch.

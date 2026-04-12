@@ -20,10 +20,17 @@ echo "[1/4] Running Playwright tests with trace retention..."
 npx playwright test --trace on || true
 
 echo "[2/4] Collecting videos..."
-find test-results -type f \( -name "*.webm" -o -name "*.mp4" \) -exec cp {} artifacts/videos/ \; 2>/dev/null || true
+find test-results -type f \( -name "*.webm" -o -name "*.mp4" \) 2>/dev/null | while IFS= read -r f; do
+  dir=$(basename "$(dirname "$f")")
+  ext="${f##*.}"
+  cp "$f" "artifacts/videos/${dir}.${ext}"
+done || true
 
 echo "[3/4] Collecting traces..."
-find test-results -type f -name "trace.zip" -exec cp {} artifacts/traces/ \; 2>/dev/null || true
+find test-results -type f -name "trace.zip" 2>/dev/null | while IFS= read -r f; do
+  dir=$(basename "$(dirname "$f")")
+  cp "$f" "artifacts/traces/${dir}.zip"
+done || true
 
 echo "[4/4] Done."
 echo "Collected artifacts:"
