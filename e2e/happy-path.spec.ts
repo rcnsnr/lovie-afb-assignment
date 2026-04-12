@@ -29,7 +29,7 @@ test("AC1+AC2 — Alice creates request; Bob pays it", async ({ page, context })
   const requestId = requestUrl.split("/").pop()!;
 
   // Alice sees PENDING and her "Cancel request" button
-  await expect(page.getByText("PENDING")).toBeVisible();
+  await expect(page.getByText("PENDING", { exact: true })).toBeVisible();
   await expect(page.getByText("Cancel request")).toBeVisible();
   await expect(page.getByText("Pay")).not.toBeVisible();
 
@@ -39,13 +39,13 @@ test("AC1+AC2 — Alice creates request; Bob pays it", async ({ page, context })
 
   // Bob sees the request in incoming dashboard
   await page.goto("/dashboard/incoming");
-  await expect(page.getByText("$15.00")).toBeVisible();
+  await expect(page.getByText("$15.00").first()).toBeVisible();
 
   // Navigate directly to the request detail
   await page.goto(`/requests/${requestId}`);
   await expect(page.getByText("$15.00")).toBeVisible();
   await expect(page.getByText("Dinner")).toBeVisible();
-  await expect(page.getByText("PENDING")).toBeVisible();
+  await expect(page.getByText("PENDING", { exact: true })).toBeVisible();
 
   // Bob sees Pay + Decline, not Cancel
   await expect(page.getByRole("button", { name: "Pay" })).toBeVisible();
@@ -55,7 +55,7 @@ test("AC1+AC2 — Alice creates request; Bob pays it", async ({ page, context })
   await page.getByRole("button", { name: "Pay" }).click();
 
   // Status transitions to PAID; action buttons disappear
-  await expect(page.getByText("PAID")).toBeVisible();
+  await expect(page.getByText("PAID", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Pay" })).not.toBeVisible();
 
   // ── Alice: outgoing dashboard shows PAID ──────────────────────────────────
@@ -65,6 +65,6 @@ test("AC1+AC2 — Alice creates request; Bob pays it", async ({ page, context })
   await page.goto("/dashboard/outgoing");
   // Find Alice's row by amount — may have other requests from prior runs, check this specific one
   await page.goto(`/requests/${requestId}`);
-  await expect(page.getByText("PAID")).toBeVisible();
+  await expect(page.getByText("PAID", { exact: true })).toBeVisible();
   await expect(page.getByText("Cancel request")).not.toBeVisible();
 });

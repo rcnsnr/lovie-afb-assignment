@@ -24,7 +24,7 @@ test("AC5 — Expired request shows EXPIRED; no action buttons", async ({ page }
 
   // Detail page renders with EXPIRED effective status
   await expect(page.getByText("$25.00")).toBeVisible();
-  await expect(page.getByText("EXPIRED")).toBeVisible();
+  await expect(page.getByText("EXPIRED", { exact: true })).toBeVisible();
 
   // No action buttons visible — terminal state
   await expect(page.getByRole("button", { name: "Pay" })).not.toBeVisible();

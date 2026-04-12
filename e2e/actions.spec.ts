@@ -38,13 +38,13 @@ test("AC3 — Bob declines Alice's request", async ({ page, context }) => {
 
   await page.goto(`/requests/${requestId}`);
   await expect(page.getByText("$20.00")).toBeVisible();
-  await expect(page.getByText("PENDING")).toBeVisible();
+  await expect(page.getByText("PENDING", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Decline" })).toBeVisible();
 
   await page.getByRole("button", { name: "Decline" }).click();
 
   // Status transitions to DECLINED; action buttons disappear
-  await expect(page.getByText("DECLINED")).toBeVisible();
+  await expect(page.getByText("DECLINED", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Pay" })).not.toBeVisible();
   await expect(page.getByRole("button", { name: "Decline" })).not.toBeVisible();
 
@@ -53,7 +53,7 @@ test("AC3 — Bob declines Alice's request", async ({ page, context }) => {
   await loginAs(page, "alice@example.com");
 
   await page.goto(`/requests/${requestId}`);
-  await expect(page.getByText("DECLINED")).toBeVisible();
+  await expect(page.getByText("DECLINED", { exact: true })).toBeVisible();
   await expect(page.getByText("Cancel request")).not.toBeVisible();
 });
 
@@ -67,13 +67,13 @@ test("AC4 — Alice cancels her own request", async ({ page, context }) => {
   const requestId = await createRequest(page, "bob@example.com", "8.00", "Coffee");
 
   // Alice sees PENDING and Cancel button
-  await expect(page.getByText("PENDING")).toBeVisible();
+  await expect(page.getByText("PENDING", { exact: true })).toBeVisible();
   await expect(page.getByText("Cancel request")).toBeVisible();
 
   await page.getByText("Cancel request").click();
 
   // Status transitions to CANCELLED; Cancel button disappears
-  await expect(page.getByText("CANCELLED")).toBeVisible();
+  await expect(page.getByText("CANCELLED", { exact: true })).toBeVisible();
   await expect(page.getByText("Cancel request")).not.toBeVisible();
 
   // ── Bob: confirm no action buttons on CANCELLED request ───────────────────
@@ -81,7 +81,7 @@ test("AC4 — Alice cancels her own request", async ({ page, context }) => {
   await loginAs(page, "bob@example.com");
 
   await page.goto(`/requests/${requestId}`);
-  await expect(page.getByText("CANCELLED")).toBeVisible();
+  await expect(page.getByText("CANCELLED", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Pay" })).not.toBeVisible();
   await expect(page.getByRole("button", { name: "Decline" })).not.toBeVisible();
 });
@@ -97,7 +97,7 @@ test("Wrong actor — Alice cannot decline her own sent request", async ({ page 
 
   // Alice is the requester — she sees Cancel but not Pay or Decline
   await page.goto(`/requests/${requestId}`);
-  await expect(page.getByText("PENDING")).toBeVisible();
+  await expect(page.getByText("PENDING", { exact: true })).toBeVisible();
   await expect(page.getByText("Cancel request")).toBeVisible();
   await expect(page.getByRole("button", { name: "Pay" })).not.toBeVisible();
   await expect(page.getByRole("button", { name: "Decline" })).not.toBeVisible();

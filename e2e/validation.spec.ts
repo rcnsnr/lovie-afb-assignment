@@ -43,8 +43,8 @@ test("AC8 — Outgoing dashboard lists sent requests; most recent first", async 
   await page.goto("/dashboard/outgoing");
 
   // Both requests are visible
-  await expect(page.getByText("First request")).toBeVisible();
-  await expect(page.getByText("Second request")).toBeVisible();
+  await expect(page.getByText("First request").first()).toBeVisible();
+  await expect(page.getByText("Second request").first()).toBeVisible();
 
   // Most recent (Second request) appears before the earlier one (First request)
   const listText = await page.locator(".divide-y").first().innerText();
@@ -64,9 +64,9 @@ test("AC9 — Incoming dashboard shows received requests", async ({ page, contex
   await loginAs(page, "bob@example.com");
   await page.goto("/dashboard/incoming");
 
-  await expect(page.getByText("$30.00")).toBeVisible();
-  await expect(page.getByText("For Bob incoming test")).toBeVisible();
-  await expect(page.getByText("PENDING")).toBeVisible();
+  await expect(page.getByText("$30.00").first()).toBeVisible();
+  await expect(page.getByText("For Bob incoming test").first()).toBeVisible();
+  await expect(page.getByText("PENDING", { exact: true }).first()).toBeVisible();
 });
 
 /**

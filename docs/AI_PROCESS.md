@@ -322,3 +322,23 @@ expiresAt > NOW()`); `count === 0` → 409; second `findUnique` for DTO (U3 patt
 - MCP OAuth tokens are scoped to MCP protocol operations and cannot be used for REST API writes
 - Supabase free tier DB is IPv6-only; Vercel build VMs are IPv4-only — any build step requiring direct DB connection will fail without the IPv4 add-on
 - Passwords containing `@` break naive URL regex; use `str.rfind('@')` to split at the correct delimiter
+
+---
+
+## Phase 10 Addendum — Infra debug session (2026-04-12)
+
+**Where AI helped:**
+
+- Systematic elimination of 3 distinct root causes: URL encoding, wrong password, wrong pooler shard
+- Added targeted `detail` field to expose full Prisma error through browser DevTools (MCP log tool was truncating)
+- Correctly identified `aws-1` vs `aws-0` shard discrepancy once `.env.local` was updated with dashboard values
+
+**Where AI was wrong:**
+
+- Previous session reconstructed the DB password by `rfind('@')` inference rather than reading it from the Supabase dashboard — the inferred password was always wrong
+- Assumed `aws-0-us-east-2.pooler.supabase.com` was the correct shard; the actual shard is `aws-1` for this project; should have prompted user to check dashboard connection string earlier rather than assuming
+- Multiple redeploy cycles could have been avoided by asking for the Supabase dashboard connection string in the first message
+
+**Manual corrections:**
+
+- User retrieved correct pooler host and password directly from Supabase dashboard after AI exhausted inference-based approaches

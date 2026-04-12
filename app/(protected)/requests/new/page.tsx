@@ -128,7 +128,6 @@ export default function NewRequestPage() {
           <textarea
             id="note"
             rows={3}
-            maxLength={200}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"

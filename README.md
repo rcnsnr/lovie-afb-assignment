@@ -44,11 +44,10 @@ It should show a controlled build process:
 - Playwright traces: `artifacts/traces/` — 15 `.zip` files, viewable in [Playwright Trace Viewer](https://trace.playwright.dev)
 - Walkthrough video: `<ADD_WALKTHROUGH_LINK_OR_PATH>`
 
-> **Evidence status**: Video and trace artifacts are collected for all 15 tests.
-> The smoke test passes against the local dev server. Full green E2E run requires
-> the Supabase database to be active and seeded (`npx prisma db seed`). Once the
-> database is reachable, re-run `bash scripts/3-run_e2e_evidence.sh .` to collect
-> passing-flow artifacts.
+> **Evidence status**: 15/15 tests pass against the production deployment at
+> `https://lovie-afb-assignment.vercel.app`. Video and trace artifacts are in
+> `artifacts/videos/` and `artifacts/traces/`. Re-run at any time:
+> `BASE_URL=https://lovie-afb-assignment.vercel.app bash scripts/3-run_e2e_evidence.sh .`
 
 ## Tech Stack
 
