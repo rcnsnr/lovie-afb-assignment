@@ -834,3 +834,45 @@ Keep entries short and factual.
 - The next step is to confirm `/speckit-constitution` resolves and then begin the real Spec-Kit flow.
 
 ---
+
+### 2026-04-12 12:55 — Phase 9: Infra fixes — Supabase seed, Vercel deployment, build repair
+
+#### What was done
+
+- Seeded Supabase DB via MCP SQL (Alice, Bob, Carol users + AC5 expired fixture); local `npx prisma db seed` was broken by Node 24 / zsh shell-quoting on `--compiler-options '{...}'`
+- Fixed seed command: added `tsconfig.seed.json` (CommonJS, node moduleResolution); updated `package.json` to `ts-node --project tsconfig.seed.json`
+- Diagnosed Vercel build failure (`DIRECT_URL` env var missing → Prisma P1012); set all three required env vars via Vercel CLI (`DATABASE_URL`, `DIRECT_URL`, `SESSION_SECRET`)
+- Fixed Vercel build failure: `prisma migrate deploy` uses DIRECT_URL which is IPv6-only on Supabase free tier — Vercel build VMs are IPv4-only; moved migrate to separate `npm run migrate` script; build command now `prisma generate && next build`
+- Fixed Next.js static prerender error: `useSearchParams()` in `/login` required a Suspense boundary; extracted `LoginForm` component and wrapped in `<Suspense>`
+- Fixed runtime 500 on Vercel login: DATABASE_URL password was truncated (16 chars vs correct 20) due to `@` in password breaking URL regex; replaced with correctly parsed value
+
+#### Why it was done
+
+- Supabase free tier had paused; project resumed but DB was empty — seed needed for E2E and demo
+- Vercel deployment was in ERROR state blocking reviewer access to live demo
+- IPv6/IPv4 mismatch is a documented Supabase free-tier constraint; migrate deploy must not run in CI build
+- `useSearchParams` prerender error is a Next.js 14 App Router hard requirement
+
+#### Artifacts changed
+
+- `tsconfig.seed.json` (new)
+- `package.json` — seed command and build script
+- `scripts/set-vercel-env.sh` (new)
+- `scripts/0-auto_fix_and_validate.sh` — exclude `test-results/`, `playwright-report/`, `artifacts/` from lint
+- `.markdownlintignore` (new)
+- `app/(auth)/login/page.tsx` — Suspense boundary for `useSearchParams`
+- Vercel env vars: DATABASE_URL (pooler), DIRECT_URL (direct), SESSION_SECRET
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` — all 5 checks pass (markdownlint, prettier, eslint, typecheck, prisma validate/generate)
+- Vercel deployment `dpl_FKqctKmTAaKf2z1S4TrzewvxbwG4` → `readyState: READY`
+- `/api/auth/login` returns 405 on GET (correct — route is live)
+- Login endpoint returning 500 was traced to truncated DATABASE_URL password → fixed and redeployed
+
+#### Notes
+
+- Local E2E tests cannot reach Supabase DB directly (ISP blocks outbound port 5432 and 6543); E2E must be run from a network with DB access or via CI
+- Re-run `bash scripts/3-run_e2e_evidence.sh .` after confirming login works on deployed URL to capture passing-flow artifacts
+
+---

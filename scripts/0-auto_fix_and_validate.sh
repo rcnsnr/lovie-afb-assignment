@@ -21,6 +21,9 @@ collect_files() {
       -not -path '*/build/*' \
       -not -path '*/coverage/*' \
       -not -path '*/.git/*' \
+      -not -path '*/test-results/*' \
+      -not -path '*/playwright-report/*' \
+      -not -path '*/artifacts/*' \
       -not -path '*/.claude/skills/speckit-*' \
       -print0)
   fi

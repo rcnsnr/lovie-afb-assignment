@@ -301,3 +301,24 @@ expiresAt > NOW()`); `count === 0` → 409; second `findUnique` for DTO (U3 patt
 - Constitution drafting used repo-local context rather than freeform prompting.
 - Human judgment constrained the workflow toward a web-first, reviewer-friendly,
   Spec-Kit-first path.
+
+## Phase 9 — Infra & Deployment (2026-04-12)
+
+### What AI did
+
+- Used Supabase MCP to check project status, list tables, and execute SQL seed directly — bypassing local network block on Supabase DB ports
+- Diagnosed Vercel build failures by reading build logs via Vercel MCP
+- Iteratively fixed four distinct build/runtime issues: missing env var, IPv4/IPv6 mismatch, Next.js prerender constraint, truncated password in pooler URL
+- Attempted Vercel REST API with MCP OAuth token (403 — token scope insufficient); fell back to CLI-based approach
+- Constructed pooler and direct Supabase URLs by parsing the original DATABASE_URL using last-`@` approach to handle passwords containing `@`
+
+### Where human judgment was needed
+
+- Confirming removal of `prisma migrate deploy` from build was acceptable (schema already deployed)
+- Language preference: user corrected AI for responding in Turkish; AI switched to English and saved preference to memory
+
+### Patterns worth noting
+
+- MCP OAuth tokens are scoped to MCP protocol operations and cannot be used for REST API writes
+- Supabase free tier DB is IPv6-only; Vercel build VMs are IPv4-only — any build step requiring direct DB connection will fail without the IPv4 add-on
+- Passwords containing `@` break naive URL regex; use `str.rfind('@')` to split at the correct delimiter
