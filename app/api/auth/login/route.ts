@@ -27,7 +27,14 @@ export async function POST(request: NextRequest) {
 
   const { email, password } = parsed.data;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  let user;
+  try {
+    user = await prisma.user.findUnique({ where: { email } });
+  } catch (dbErr) {
+    const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+    console.error("[login] prisma error:", msg);
+    return NextResponse.json({ error: "Database error", detail: msg }, { status: 500 });
+  }
   if (!user) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }

@@ -46,6 +46,12 @@ Use this file as a compact log of meaningful execution decisions.
   `DATABASE_URL=<direct_url> npx prisma db seed`
 - Impact: Without `directUrl`, `prisma migrate deploy` may fail when `DATABASE_URL`
   routes through pgbouncer (extended query protocol incompatibility).
+- Helper script: `scripts/set-vercel-env.sh` now syncs production first and treats
+  preview sync as best-effort from `.env.local` because Vercel may require branch-scoped
+  preview vars in the dashboard.
+- Vercel runtime diagnosis: after the host mismatch was corrected, the deployment now
+  reaches Supabase but fails authentication at the database server, so the remaining
+  blocker is the Supabase DB credential value rather than the app code.
 
 ## Spec / Implementation Drift Notes
 
@@ -58,3 +64,10 @@ None yet.
 - Reason: Phase-end validation and reviewer-facing log sync were being done manually and
   were easy to forget. The new workflow standardizes closeout into one repeatable path.
 - Impact: Phase boundaries now have a default validation + logging flow before commit/push.
+
+## Deployment Recovery: Supabase Password Refresh
+
+- Date: 2026-04-12
+- Action: Refreshed the Supabase database password in the local env files and re-synced Vercel production env vars.
+- Result: Production redeploy completed successfully and `/api/auth/login` now returns the seeded Alice user.
+- Remaining note: Preview env var scoping still needs manual Vercel dashboard handling if preview deployments are required for the feature branch.

@@ -876,3 +876,30 @@ Keep entries short and factual.
 - Re-run `bash scripts/3-run_e2e_evidence.sh .` after confirming login works on deployed URL to capture passing-flow artifacts
 
 ---
+
+#### What was done
+
+- Refreshed the Supabase database password in the local env files and re-synced Vercel production env vars using the updated credential.
+- Rebuilt and redeployed the production Vercel deployment after the password refresh.
+- Verified the deployed `/api/auth/login` endpoint now authenticates the seeded Alice user successfully.
+
+#### Why it was done
+
+- The previous blocker was a database authentication failure against Supabase from the deployed app.
+- Production env sync needed to be refreshed with the corrected credential so the runtime could connect to the database again.
+
+#### Artifacts changed
+
+- `.env` and `.env.local` — updated the Supabase connection strings to use the refreshed database password.
+- `scripts/set-vercel-env.sh` — simplified the env sync flow to use explicit `--value` arguments for production and preview attempts.
+- `docs/BUILD_NOTES.md` — recorded the password refresh and successful redeploy.
+
+#### Validation
+
+- `bash -n scripts/set-vercel-env.sh` — pass
+- `bash scripts/set-vercel-env.sh --deploy` — pass for production sync and redeploy
+- `npx vercel curl /api/auth/login --deployment https://lovie-afb-assignment-qvsmn2xa7-orcunsener-4857s-projects.vercel.app ...` — returns the Alice session payload
+
+#### Notes
+
+- Preview env var sync still returns `action_required` in the current Vercel CLI flow and is left for manual dashboard handling if preview deployments are needed.
