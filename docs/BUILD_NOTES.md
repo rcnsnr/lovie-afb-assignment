@@ -19,7 +19,6 @@ Use this file as a compact log of meaningful execution decisions.
   Next.js 15 feature). Dev server threw on startup.
 - Correction: Renamed to `next.config.js` with JSDoc type annotation.
 - Why it mattered: Dev server would not start without this fix.
-
 - Date: 2026-04-10
 - Problem: `prisma init` fails on Node 24 with `(0 , CSe.isError) is not a function`
   (bundled CLI incompatibility). Isolated to the `init` subcommand only.
