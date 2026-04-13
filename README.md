@@ -92,6 +92,9 @@ Key files for review:
 - `docs/AI_PROCESS.md`
 - `docs/BUILD_NOTES.md`
 - `docs/VIDEO_EVIDENCE_GUIDE.md`
+- `docs/SECURITY_AUDIT.md`
+- `docs/EVIDENCE_INDEX.md`
+- `RELEASE_NOTES.md`
 
 ## Local Development
 
@@ -100,7 +103,7 @@ Key files for review:
 - Node.js 20+ (LTS recommended; tested on 24)
 - npm 10+
 - A PostgreSQL database — Supabase free tier works out of the box
-- `DATABASE_URL` and `SESSION_SECRET` environment variables (see `.env.example`)
+- `DATABASE_URL`, `DIRECT_URL`, and `SESSION_SECRET` environment variables (see `.env.example`)
 
 ### Key Dependencies
 
@@ -117,7 +120,7 @@ Key files for review:
 
 ```bash
 cp .env.example .env.local
-# Edit .env.local — fill in DATABASE_URL and SESSION_SECRET
+# Edit .env.local — fill in DATABASE_URL, DIRECT_URL, and SESSION_SECRET
 ```
 
 `SESSION_SECRET` must be at least 32 characters. Generate one with:
@@ -130,6 +133,14 @@ openssl rand -hex 32
 
 ```bash
 npm install
+```
+
+### Apply Migrations
+
+With `DIRECT_URL` filled in, Prisma uses the direct connection for migration commands:
+
+```bash
+npx prisma migrate deploy
 ```
 
 ### Seed the Database
@@ -216,7 +227,7 @@ This is expected to collect:
 
 ### Vercel + Supabase
 
-The build command (`npm run build`) runs `prisma generate && prisma migrate deploy && next build`.
+The build command (`npm run build`) runs `prisma generate && next build`.
 Vercel executes this automatically on each push.
 
 **Required environment variables in Vercel dashboard:**
@@ -224,17 +235,21 @@ Vercel executes this automatically on each push.
 | Variable         | Value                                                                                 |
 | ---------------- | ------------------------------------------------------------------------------------- |
 | `DATABASE_URL`   | Supabase Transaction pooler URL (port 6543) with `?pgbouncer=true&connect_timeout=10` |
-| `DIRECT_URL`     | Supabase direct URL (port 5432) — used by Prisma migrations only                      |
 | `SESSION_SECRET` | Random string ≥ 32 characters (`openssl rand -hex 32`)                                |
+
+`DIRECT_URL` should stay local-only unless you intentionally run migrations from a trusted environment.
+The current Vercel build/runtime path does not require `DIRECT_URL`, so it should not be stored in Vercel by default.
+Preview envs are optional; if you enable them, prefer an isolated preview DB instead of reusing the same production-backed runtime secret by default.
 
 **First deploy checklist:**
 
-1. Add env vars in Vercel dashboard (Production + Preview).
-2. Push to trigger build — migrations run automatically.
-3. Seed the database once:
+1. Add `DATABASE_URL` and `SESSION_SECRET` in Vercel dashboard (Production; Preview only if you explicitly want preview deploys).
+2. Push to trigger build.
+3. If you need to run migrations or seed manually, do it from a trusted local shell using `DIRECT_URL`:
 
    ```bash
-   DIRECT_URL=<supabase_direct_url> DATABASE_URL=<same> npx prisma db seed
+   DIRECT_URL=<supabase_direct_url> npx prisma migrate deploy
+   DIRECT_URL=<supabase_direct_url> DATABASE_URL=<supabase_direct_url> npx prisma db seed
    ```
 
 4. Confirm `/login` loads and `alice@example.com` / `demo1234` signs in.
@@ -251,3 +266,17 @@ See:
 See:
 
 - `docs/AI_PROCESS.md`
+
+## Security and Release Artifacts
+
+See:
+
+- `docs/SECURITY_AUDIT.md`
+- `docs/EVIDENCE_INDEX.md`
+- `RELEASE_NOTES.md`
+
+To package a final reviewer bundle locally:
+
+```bash
+bash scripts/4-package_submission_bundle.sh . submission_bundle_v1.0.0
+```

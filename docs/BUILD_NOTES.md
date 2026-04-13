@@ -30,24 +30,22 @@ Use this file as a compact log of meaningful execution decisions.
 ## Deployment: Vercel + Supabase
 
 - Date: 2026-04-11
-- Build command: `npm run build` → expands to `prisma generate && prisma migrate deploy && next build`
+- Build command: `npm run build` → expands to `prisma generate && next build`
 - Vercel auto-detects Next.js; `vercel.json` makes the build command explicit.
 - Prisma `directUrl` added to `prisma/schema.prisma` (Supabase pooler pattern):
   - `DATABASE_URL` = Transaction pooler URL (port 6543, `?pgbouncer=true&connect_timeout=10`)
     — used at runtime by the Next.js API routes.
   - `DIRECT_URL` = Session/direct URL (port 5432, no pgbouncer params)
-    — used by `prisma migrate deploy` and `prisma generate` only.
+    — used by trusted-shell migration / seed flows.
 - Required Vercel environment variables:
   - `DATABASE_URL` — Supabase Transaction pooler URL with pgbouncer params
-  - `DIRECT_URL` — Supabase direct URL without pgbouncer params
   - `SESSION_SECRET` — minimum 32 characters; generate with `openssl rand -hex 32`
-- Seed is NOT run automatically on deploy. Run manually once against the production DB:
+- `DIRECT_URL` is kept local-only. `npm run build` was verified locally with `DIRECT_URL` unset.
+- Seed is NOT run automatically on deploy. Run manually once against the production DB from a trusted shell:
   `DATABASE_URL=<direct_url> npx prisma db seed`
-- Impact: Without `directUrl`, `prisma migrate deploy` may fail when `DATABASE_URL`
-  routes through pgbouncer (extended query protocol incompatibility).
-- Helper script: `scripts/set-vercel-env.sh` now syncs production first and treats
-  preview sync as best-effort from `.env.local` because Vercel may require branch-scoped
-  preview vars in the dashboard.
+- Impact: keeping `DIRECT_URL` out of Vercel avoids exposing a stronger database secret to the hosted runtime when it is not needed.
+- Helper script: `scripts/set-vercel-env.sh` now syncs Production only by default.
+  Preview sync is opt-in with `--include-preview`; `DIRECT_URL` is opt-in with `--include-direct-url`.
 
 ## Deployment Recovery: Supabase Pooler Shard + Credentials
 
@@ -95,3 +93,20 @@ None.
 - Reason: Phase-end validation and reviewer-facing log sync were being done manually and
   were easy to forget. The new workflow standardizes closeout into one repeatable path.
 - Impact: Phase boundaries now have a default validation + logging flow before commit/push.
+
+## Security and Release Hardening
+
+- Date: 2026-04-13
+- Decision: Removed `DIRECT_URL` from Vercel production and changed the sync script so it is local-only by default.
+- Reason: The current build/runtime path only needs `DATABASE_URL` and `SESSION_SECRET`; keeping `DIRECT_URL` in Vercel widened secret exposure with no runtime value.
+- Impact: Lower secret blast radius in Vercel. Local migrations/seeding still use `DIRECT_URL` from a trusted shell only.
+
+- Date: 2026-04-13
+- Decision: Stopped syncing Preview env vars by default from the helper script.
+- Reason: Sharing the same runtime DB secret with Preview is a security/review tradeoff and should be explicit, not automatic.
+- Impact: Production remains the only default target. Preview sync now requires `--include-preview`.
+
+- Date: 2026-04-13
+- Decision: Added baseline HTTP security headers in `next.config.js`.
+- Reason: The app had no response hardening headers at all.
+- Impact: Better browser-side protection against clickjacking, MIME sniffing, and overly broad referrer leakage.

@@ -304,7 +304,7 @@ expiresAt > NOW()`); `count === 0` → 409; second `findUnique` for DTO (U3 patt
 
 ## Phase 9 — Infra & Deployment (2026-04-12)
 
-### What AI did
+### What AI did in this phase
 
 - Used Supabase MCP to check project status, list tables, and execute SQL seed directly — bypassing local network block on Supabase DB ports
 - Diagnosed Vercel build failures by reading build logs via Vercel MCP
@@ -312,12 +312,12 @@ expiresAt > NOW()`); `count === 0` → 409; second `findUnique` for DTO (U3 patt
 - Attempted Vercel REST API with MCP OAuth token (403 — token scope insufficient); fell back to CLI-based approach
 - Constructed pooler and direct Supabase URLs by parsing the original DATABASE_URL using last-`@` approach to handle passwords containing `@`
 
-### Where human judgment was needed
+### Where human judgment was needed in this phase
 
 - Confirming removal of `prisma migrate deploy` from build was acceptable (schema already deployed)
 - Language preference: user corrected AI for responding in Turkish; AI switched to English and saved preference to memory
 
-### Patterns worth noting
+### Patterns worth noting from this phase
 
 - MCP OAuth tokens are scoped to MCP protocol operations and cannot be used for REST API writes
 - Supabase free tier DB is IPv6-only; Vercel build VMs are IPv4-only — any build step requiring direct DB connection will fail without the IPv4 add-on
@@ -342,3 +342,22 @@ expiresAt > NOW()`); `count === 0` → 409; second `findUnique` for DTO (U3 patt
 **Manual corrections:**
 
 - User retrieved correct pooler host and password directly from Supabase dashboard after AI exhausted inference-based approaches
+
+## Phase 12 — Security audit and release prep (2026-04-13)
+
+### What AI did
+
+- audited the public repo surface, Vercel env inventory, runtime logs, and live login path
+- reduced the env sync helper so Production is the only default sync target
+- documented security posture, evidence inventory, and release notes for reviewer packaging
+- created a portable prompt file for finishing the remaining product gaps in another AI environment
+
+### Where human judgment was needed
+
+- deciding not to auto-enable Preview envs with the same runtime database secret
+- keeping the Next.js security advisory as a documented residual risk instead of attempting a destabilizing major upgrade at submission time
+
+### Patterns worth noting
+
+- build/runtime security posture is partly code and partly platform; the repo should document what was verified live versus what still requires dashboard confirmation
+- public-assignment repos benefit from explicit package/release artifacts because binary evidence files are usually gitignored

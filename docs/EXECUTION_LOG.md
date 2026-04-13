@@ -19,6 +19,52 @@ Use it to capture:
 
 ---
 
+### 2026-04-13 20:40 — Security audit + release hardening
+
+#### What was done
+
+- verified the GitHub repository is now publicly reachable
+- audited the public Vercel deployment, env inventory, and runtime logs
+- removed broad/default Preview env sync from `scripts/set-vercel-env.sh`
+- kept `DIRECT_URL` local-only by default and documented the rule in repo docs
+- added baseline HTTP security headers in `next.config.js`
+- added release-facing docs: `docs/SECURITY_AUDIT.md`, `docs/EVIDENCE_INDEX.md`, `RELEASE_NOTES.md`
+- improved the submission bundle script and added a reusable prompt for finishing remaining assignment gaps in another environment
+
+#### Why it was done
+
+- the repo is now public, so platform secret scope and reviewer-facing packaging needed a final hardening pass
+- the previous docs still described a broader Vercel env footprint than the current secure runtime path needs
+
+#### Artifacts changed
+
+- `next.config.js`
+- `scripts/set-vercel-env.sh`
+- `.env.example`
+- `README.md`
+- `docs/BUILD_NOTES.md`
+- `docs/VIDEO_EVIDENCE_GUIDE.md`
+- `docs/SECURITY_AUDIT.md`
+- `docs/EVIDENCE_INDEX.md`
+- `RELEASE_NOTES.md`
+- `prompts/remaining-gaps-fix-prompt.md`
+
+#### Validation
+
+- anonymous GitHub repo check → 200
+- Vercel production env inventory → only `DATABASE_URL`, `SESSION_SECRET`
+- Vercel production runtime log scan → no warning/error entries in inspected window
+- `curl -I https://lovie-afb-assignment.vercel.app/login`
+- `POST /api/auth/login` with seeded demo credentials → 200
+- `npm audit --omit=dev --audit-level=high` → 1 high advisory in `next`
+
+#### Notes
+
+- the remaining security risk is the upstream `next@14.2.35` advisory set
+- preview protection / firewall / source-map privacy still need dashboard-side confirmation
+
+---
+
 ## How to update this file
 
 Add or extend an entry when one of these happens:

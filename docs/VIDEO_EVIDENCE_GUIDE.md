@@ -75,17 +75,30 @@ Do not waste time on:
 
 ## Packaging
 
-Recommended final evidence layout:
+Current final evidence layout:
 
 ```text
 artifacts/
   videos/
-    e2e-happy-path.mp4
-    e2e-expired-request.mp4
+    happy-path-AC1-AC2-...webm
+    expiration-AC5-...webm
+    actions-AC3-...webm
+    actions-AC4-...webm
+    authorization-AC6-...webm
+    authorization-AC7-...webm
+    validation-AC8-...webm ... validation-AC13-...webm
+    smoke-...webm
   traces/
-    trace.zip
+    happy-path-AC1-AC2-...zip
+    ...
+```
+
+Optional extra evidence:
+
+```text
+artifacts/
   walkthrough/
     walkthrough-build-and-evidence.mp4
 ```
 
-Link these from the project README.
+The current release does not include a separate narrated walkthrough; the automated E2E videos are the reviewer evidence source of truth.
