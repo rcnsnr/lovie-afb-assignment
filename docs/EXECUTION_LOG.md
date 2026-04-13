@@ -19,6 +19,43 @@ Use it to capture:
 
 ---
 
+### 2026-04-13 — Batch A: phone field foundation (T032-T034)
+
+#### What was done
+
+- Created feature branch `feat/phone-filter-search-pay-simulation` — all gap work isolated from `main`
+- T032: Added `phone String? @unique` to `prisma/schema.prisma`; applied `ALTER TABLE "User" ADD COLUMN "phone" TEXT UNIQUE` via Supabase MCP (DIRECT_URL not reachable from local IPv4); local migration file `20260413000000_add_user_phone` added for history
+- T033: Updated `prisma/seed.ts` — Alice `+15550001111`, Bob `+15550002222`, Carol `+15550003333`; `update` block added so re-seed is idempotent on existing users
+- T034: Extended `PaymentRequestDTO` with `requesterPhone: string | null` and `recipientPhone: string | null`; `toPaymentRequestDTO()` maps `req.requester.phone ?? null` and `req.recipient.phone ?? null`
+
+#### Why it was done
+
+- Phone number is required for the phone-recipient lookup path (T035)
+- DTO extension is required before search can match on phone (T040-T042)
+
+#### Artifacts changed
+
+- `prisma/schema.prisma`
+- `prisma/migrations/20260413000000_add_user_phone/migration.sql`
+- `prisma/seed.ts`
+- `lib/dto.ts`
+- `specs/001-p2p-payment-request/tasks.md` (T032-T034 marked complete)
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` → 5/5 checks green
+- `npm run build` → 13/13 pages, TypeScript strict, no errors
+- `npm run lint` → 0 warnings/errors
+- `npm run typecheck` → clean
+- `npx prisma validate` → schema valid
+
+#### Notes
+
+- DIRECT_URL (IPv6-only Supabase direct connection) not reachable from local IPv4 shell; migration applied via Supabase MCP instead; behavior is equivalent
+- Project was bootstrapped with `prisma db push`, so `_prisma_migrations` table does not exist; local migration file is for audit trail only
+
+---
+
 ### 2026-04-13 20:40 — Security audit + release hardening
 
 #### What was done
