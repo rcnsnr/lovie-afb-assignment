@@ -569,7 +569,7 @@ validate and stop here — existing tests must remain green. No downstream break
 
 ### T032
 
-- [ ] T032 Add `phone String? @unique` to User model in `prisma/schema.prisma` and generate a new migration named `add_user_phone`
+- [x] T032 Add `phone String? @unique` to User model in `prisma/schema.prisma` and generate a new migration named `add_user_phone`
 - objective: Extend the User model with an optional unique phone field. Create a Prisma
   migration that adds the column without touching existing rows.
 - files: `prisma/schema.prisma`, `prisma/migrations/` (new migration directory)
@@ -586,7 +586,7 @@ validate and stop here — existing tests must remain green. No downstream break
 
 ### T033
 
-- [ ] T033 Update `prisma/seed.ts` to set phone numbers on Alice, Bob, and Carol (+15550001111, +15550002222, +15550003333)
+- [x] T033 Update `prisma/seed.ts` to set phone numbers on Alice, Bob, and Carol (+15550001111, +15550002222, +15550003333)
 - objective: Give all three seeded demo users phone numbers so phone-lookup E2E tests
   have stable, known values.
 - files: `prisma/seed.ts`
@@ -602,7 +602,7 @@ validate and stop here — existing tests must remain green. No downstream break
 
 ### T034
 
-- [ ] T034 Add `requesterPhone: string | null` and `recipientPhone: string | null` to `PaymentRequestDTO` in `lib/dto.ts`
+- [x] T034 Add `requesterPhone: string | null` and `recipientPhone: string | null` to `PaymentRequestDTO` in `lib/dto.ts`
 - objective: Expose requester and recipient phone numbers in the DTO so dashboards can
   include phone in search matching. No API or UI changes yet.
 - files: `lib/dto.ts`

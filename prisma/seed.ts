@@ -9,31 +9,34 @@ async function main() {
   // Seed users: Alice, Bob, Carol
   const alice = await prisma.user.upsert({
     where: { email: "alice@example.com" },
-    update: {},
+    update: { phone: "+15550001111" },
     create: {
       email: "alice@example.com",
       password: DEMO_PASSWORD_HASH,
       name: "Alice",
+      phone: "+15550001111",
     },
   });
 
   const bob = await prisma.user.upsert({
     where: { email: "bob@example.com" },
-    update: {},
+    update: { phone: "+15550002222" },
     create: {
       email: "bob@example.com",
       password: DEMO_PASSWORD_HASH,
       name: "Bob",
+      phone: "+15550002222",
     },
   });
 
   const carol = await prisma.user.upsert({
     where: { email: "carol@example.com" },
-    update: {},
+    update: { phone: "+15550003333" },
     create: {
       email: "carol@example.com",
       password: DEMO_PASSWORD_HASH,
       name: "Carol",
+      phone: "+15550003333",
     },
   });
 

@@ -13,8 +13,10 @@ export interface PaymentRequestDTO {
   recipientId: string;
   requesterEmail: string;
   requesterName: string;
+  requesterPhone: string | null;
   recipientEmail: string;
   recipientName: string;
+  recipientPhone: string | null;
   amountDisplay: string;
   amountMinorUnits: number;
   note: string | null;
@@ -33,8 +35,10 @@ export function toPaymentRequestDTO(req: PaymentRequestWithRelations): PaymentRe
     recipientId: req.recipientId,
     requesterEmail: req.requester.email,
     requesterName: req.requester.name,
+    requesterPhone: req.requester.phone ?? null,
     recipientEmail: req.recipient.email,
     recipientName: req.recipient.name,
+    recipientPhone: req.recipient.phone ?? null,
     amountDisplay: formatCents(req.amountMinorUnits),
     amountMinorUnits: req.amountMinorUnits,
     note: req.note,
