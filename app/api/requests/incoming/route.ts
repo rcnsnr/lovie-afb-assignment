@@ -20,11 +20,26 @@ export async function GET(request: NextRequest) {
   // Filter AFTER toPaymentRequestDTO so EXPIRED is computed from effective status,
   // not raw DB status — a DB-level WHERE would miss implicitly-expired PENDING rows.
   const dtos = rows.map(toPaymentRequestDTO);
+
   const statusParam = request.nextUrl.searchParams.get("status")?.toUpperCase();
-  const requests =
+  const statusFiltered =
     statusParam && VALID_STATUSES.includes(statusParam as (typeof VALID_STATUSES)[number])
       ? dtos.filter((r) => r.status === statusParam)
       : dtos;
+
+  // Search: case-insensitive substring match on requester name, email, phone (OR logic).
+  // Null phone guarded with ?? '' to avoid .toLowerCase() crash.
+  const searchParam = request.nextUrl.searchParams.get("search")?.trim().toLowerCase();
+  const requests = searchParam
+    ? statusFiltered.filter((r) => {
+        const q = searchParam;
+        return (
+          r.requesterName.toLowerCase().includes(q) ||
+          r.requesterEmail.toLowerCase().includes(q) ||
+          (r.requesterPhone ?? "").toLowerCase().includes(q)
+        );
+      })
+    : statusFiltered;
 
   return NextResponse.json({ requests });
 }

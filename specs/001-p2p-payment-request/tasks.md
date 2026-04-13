@@ -775,7 +775,7 @@ status filter, URL-driven. After this batch: AC17, AC18, AC19 verifiable.
 
 ### T041
 
-- [ ] T041 [US3] Update `GET /api/requests` and `GET /api/requests/incoming` to apply `?search=` filtering after status filter
+- [x] T041 [US3] Update `GET /api/requests` and `GET /api/requests/incoming` to apply `?search=` filtering after status filter
 - objective: Accept `?search=` query param. After status filtering, further filter the DTO
   array by case-insensitive substring match on the counterparty's name, email, and phone
   (OR logic). On outgoing dashboard the counterparty is the recipient; on incoming the
@@ -796,7 +796,7 @@ status filter, URL-driven. After this batch: AC17, AC18, AC19 verifiable.
 
 ### T042
 
-- [ ] T042 [US3] Update outgoing and incoming dashboard pages to read `searchParams.search`, pass to API fetch URL, and render `<SearchInput>`
+- [x] T042 [US3] Update outgoing and incoming dashboard pages to read `searchParams.search`, pass to API fetch URL, and render `<SearchInput>`
 - objective: Both dashboard pages already read `searchParams` from Next.js App Router.
   Add `search` to the API fetch URL. Render `<SearchInput>` above the list, passing
   current search value. When both filter and search produce an empty result, show the

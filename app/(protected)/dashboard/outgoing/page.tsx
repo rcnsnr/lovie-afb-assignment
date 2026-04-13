@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { toPaymentRequestDTO } from "@/lib/dto";
@@ -6,6 +7,7 @@ import { PaymentRequestDTO } from "@/lib/dto";
 import { redirect } from "next/navigation";
 import { ExpiryCountdown } from "@/components/ExpiryCountdown";
 import { FilterBar } from "@/components/FilterBar";
+import { SearchInput } from "@/components/SearchInput";
 
 const VALID_STATUSES = ["PENDING", "PAID", "DECLINED", "CANCELLED", "EXPIRED"] as const;
 
@@ -48,7 +50,7 @@ function RequestRow({ req }: { req: PaymentRequestDTO }) {
 export default async function OutgoingDashboardPage({
   searchParams,
 }: {
-  searchParams: { status?: string };
+  searchParams: { status?: string; search?: string };
 }) {
   const session = await getSession();
   if (!session.userId) redirect("/login");
@@ -66,8 +68,22 @@ export default async function OutgoingDashboardPage({
     statusParam && VALID_STATUSES.includes(statusParam as (typeof VALID_STATUSES)[number])
       ? statusParam
       : "ALL";
-  const requests =
+  const statusFiltered =
     activeStatus === "ALL" ? allDtos : allDtos.filter((r) => r.status === activeStatus);
+
+  // Search: case-insensitive substring match on recipient name, email, phone (OR logic).
+  // Null phone guarded with ?? '' to avoid .toLowerCase() crash.
+  const searchParam = searchParams.search?.trim().toLowerCase();
+  const requests = searchParam
+    ? statusFiltered.filter((r) => {
+        const q = searchParam;
+        return (
+          r.recipientName.toLowerCase().includes(q) ||
+          r.recipientEmail.toLowerCase().includes(q) ||
+          (r.recipientPhone ?? "").toLowerCase().includes(q)
+        );
+      })
+    : statusFiltered;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -92,9 +108,17 @@ export default async function OutgoingDashboardPage({
         <FilterBar activeStatus={activeStatus} basePath="/dashboard/outgoing" />
       </div>
 
+      <div className="mb-4">
+        <Suspense fallback={null}>
+          <SearchInput basePath="/dashboard/outgoing" />
+        </Suspense>
+      </div>
+
       {requests.length === 0 ? (
         <p className="py-12 text-center text-sm text-gray-500">
-          {activeStatus === "ALL" ? (
+          {searchParam ? (
+            `No results for "${searchParams.search}".`
+          ) : activeStatus === "ALL" ? (
             <>
               No outgoing requests yet.{" "}
               <Link href="/requests/new" className="text-blue-600 hover:underline">
