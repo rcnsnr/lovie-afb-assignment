@@ -932,7 +932,7 @@ the existing 13. Video and trace artifacts collected for all.
 
 ### T047
 
-- [ ] T047 [US4] Write E2E tests for pay simulation in `e2e/pay-simulation.spec.ts` (AC24-AC25)
+- [x] T047 [US4] Write E2E tests for pay simulation in `e2e/pay-simulation.spec.ts` (AC24-AC25)
 - objective: Two test cases:
   (AC24) Alice creates a request; Bob opens it and clicks Pay; spinner is visible and
   Pay button is disabled; after ~2-3s the request transitions to PAID.
