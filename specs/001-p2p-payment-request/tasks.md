@@ -631,7 +631,7 @@ in E2E (T045 in Phase 15).
 
 ### T035
 
-- [ ] T035 [US1] Update `POST /api/requests` in `app/api/requests/route.ts` to accept `recipientPhone` as an alternative to `recipientEmail`
+- [x] T035 [US1] Update `POST /api/requests` in `app/api/requests/route.ts` to accept `recipientPhone` as an alternative to `recipientEmail`
 - objective: Extend the create-request Zod schema and handler to accept exactly one of
   `recipientEmail` or `recipientPhone`. Phone path: validate format with
   `/^\+?[1-9]\d{6,14}$/`, look up user by exact phone match, apply same 404/422 guards
@@ -650,7 +650,7 @@ in E2E (T045 in Phase 15).
 
 ### T036
 
-- [ ] T036 [US1] Add Email/Phone toggle to the create request form in `app/(protected)/requests/new/page.tsx`
+- [x] T036 [US1] Add Email/Phone toggle to the create request form in `app/(protected)/requests/new/page.tsx`
 - objective: Add `identificationMethod` state (`'email' | 'phone'`). Render two toggle
   buttons; show only the active input. Phone input is plain text with placeholder
   "+15551234567". Switching toggle clears the hidden field's state. Submit sends

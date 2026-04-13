@@ -5,12 +5,23 @@ import { useRouter } from "next/navigation";
 
 export default function NewRequestPage() {
   const router = useRouter();
+  const [identificationMethod, setIdentificationMethod] = useState<"email" | "phone">("email");
   const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
   const [amountDollars, setAmountDollars] = useState("");
   const [note, setNote] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  function switchMethod(method: "email" | "phone") {
+    setIdentificationMethod(method);
+    // Clear the field being hidden so stale values don't get submitted
+    if (method === "phone") setRecipientEmail("");
+    else setRecipientPhone("");
+    setErrors({});
+    setFormError(null);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -19,6 +30,9 @@ export default function NewRequestPage() {
 
     // Client-side pre-validation (mirrors server rules)
     const clientErrors: Record<string, string> = {};
+    if (identificationMethod === "phone" && !/^\+?[1-9]\d{6,14}$/.test(recipientPhone)) {
+      clientErrors.recipientPhone = "Enter a valid phone number (e.g. +15551234567)";
+    }
     if (!/^\d+(\.\d{1,2})?$/.test(amountDollars) || parseFloat(amountDollars) <= 0) {
       clientErrors.amountDollars = "Enter a positive dollar amount (e.g. 15.00)";
     }
@@ -36,7 +50,7 @@ export default function NewRequestPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          recipientEmail,
+          ...(identificationMethod === "email" ? { recipientEmail } : { recipientPhone }),
           amountDollars,
           note: note || undefined,
         }),
@@ -50,7 +64,11 @@ export default function NewRequestPage() {
 
       const data = await res.json();
       if (res.status === 404) {
-        setFormError("No account found with that email address.");
+        setFormError(
+          identificationMethod === "email"
+            ? "No account found with that email address."
+            : "No account found with that phone number."
+        );
       } else if (res.status === 422) {
         setFormError("You cannot send a payment request to yourself.");
       } else if (res.status === 400 && data.issues) {
@@ -79,20 +97,74 @@ export default function NewRequestPage() {
         onSubmit={handleSubmit}
         className="space-y-5 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200"
       >
-        {/* Recipient email */}
+        {/* Recipient — email/phone toggle */}
         <div>
-          <label htmlFor="recipientEmail" className="mb-1 block text-sm font-medium text-gray-700">
-            Recipient email
-          </label>
-          <input
-            id="recipientEmail"
-            type="email"
-            required
-            value={recipientEmail}
-            onChange={(e) => setRecipientEmail(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            placeholder="bob@example.com"
-          />
+          <div className="mb-2 flex gap-2">
+            <button
+              type="button"
+              onClick={() => switchMethod("email")}
+              className={`rounded-full px-4 py-1 text-sm font-medium transition-colors ${
+                identificationMethod === "email"
+                  ? "bg-blue-600 text-white"
+                  : "border border-gray-300 text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Email
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMethod("phone")}
+              className={`rounded-full px-4 py-1 text-sm font-medium transition-colors ${
+                identificationMethod === "phone"
+                  ? "bg-blue-600 text-white"
+                  : "border border-gray-300 text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Phone
+            </button>
+          </div>
+
+          {identificationMethod === "email" ? (
+            <div>
+              <label
+                htmlFor="recipientEmail"
+                className="mb-1 block text-sm font-medium text-gray-700"
+              >
+                Recipient email
+              </label>
+              <input
+                id="recipientEmail"
+                type="email"
+                required
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="bob@example.com"
+              />
+            </div>
+          ) : (
+            <div>
+              <label
+                htmlFor="recipientPhone"
+                className="mb-1 block text-sm font-medium text-gray-700"
+              >
+                Recipient phone
+              </label>
+              <input
+                id="recipientPhone"
+                type="text"
+                inputMode="tel"
+                required
+                value={recipientPhone}
+                onChange={(e) => setRecipientPhone(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="+15551234567"
+              />
+              {errors.recipientPhone && (
+                <p className="mt-1 text-xs text-red-600">{errors.recipientPhone}</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Amount */}

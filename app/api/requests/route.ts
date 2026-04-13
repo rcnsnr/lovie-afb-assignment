@@ -19,16 +19,32 @@ export async function GET() {
   return NextResponse.json({ requests: requests.map(toPaymentRequestDTO) });
 }
 
-const createRequestSchema = z.object({
-  recipientEmail: z.string().email(),
-  // Single Zod chain per IG2: parse dollar string → integer minor units
-  amountDollars: z
-    .string()
-    .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a positive number with at most 2 decimal places")
-    .transform((s) => Math.round(parseFloat(s) * 100))
-    .pipe(z.number().int().positive("Amount must be greater than zero")),
-  note: z.string().max(200).optional(),
-});
+const createRequestSchema = z
+  .object({
+    recipientEmail: z.string().email().optional(),
+    recipientPhone: z
+      .string()
+      .regex(/^\+?[1-9]\d{6,14}$/, "Phone must be E.164-like format (e.g. +15551234567)")
+      .optional(),
+    // Single Zod chain per IG2: parse dollar string → integer minor units
+    amountDollars: z
+      .string()
+      .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a positive number with at most 2 decimal places")
+      .transform((s) => Math.round(parseFloat(s) * 100))
+      .pipe(z.number().int().positive("Amount must be greater than zero")),
+    note: z.string().max(200).optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasEmail = !!data.recipientEmail;
+    const hasPhone = !!data.recipientPhone;
+    if (hasEmail === hasPhone) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Provide exactly one of recipientEmail or recipientPhone",
+        path: [hasEmail ? "recipientEmail" : "recipientPhone"],
+      });
+    }
+  });
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -51,12 +67,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // After transform, amountDollars is integer minor units
-  const { recipientEmail, amountDollars: amountMinorUnits, note } = parsed.data;
+  const { recipientEmail, recipientPhone, amountDollars: amountMinorUnits, note } = parsed.data;
 
-  const recipient = await prisma.user.findUnique({
-    where: { email: recipientEmail },
-  });
+  // Lookup recipient by whichever identifier was provided
+  const recipient = recipientEmail
+    ? await prisma.user.findUnique({ where: { email: recipientEmail } })
+    : await prisma.user.findUnique({ where: { phone: recipientPhone } });
+
   if (!recipient) {
     return NextResponse.json({ error: "Recipient not found" }, { status: 404 });
   }
