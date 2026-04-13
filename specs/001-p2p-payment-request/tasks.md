@@ -887,7 +887,7 @@ the existing 13. Video and trace artifacts collected for all.
 
 ### T045
 
-- [ ] T045 [US1] Write E2E tests for phone recipient in `e2e/phone.spec.ts` (AC20-AC23)
+- [x] T045 [US1] Write E2E tests for phone recipient in `e2e/phone.spec.ts` (AC20-AC23)
 - objective: Four test cases:
   (AC20) Create form shows Email/Phone toggle; clicking Phone hides email input and shows
   phone input.
