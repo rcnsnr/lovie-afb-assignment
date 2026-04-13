@@ -754,7 +754,7 @@ status filter, URL-driven. After this batch: AC17, AC18, AC19 verifiable.
 
 ### T040
 
-- [ ] T040 [US3] Create `components/SearchInput.tsx` — debounced search input (300ms, router.replace)
+- [x] T040 [US3] Create `components/SearchInput.tsx` — debounced search input (300ms, router.replace)
 - objective: Client component that renders a text input. On change, starts a 300ms
   debounce timer (clearing previous timer on each keystroke). After 300ms, calls
   `router.replace` to update `?search=` in the URL (removes param when empty). Reads
