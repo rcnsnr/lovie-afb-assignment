@@ -19,6 +19,34 @@ Use it to capture:
 
 ---
 
+### 2026-04-13 — Batch C: status filter — component, API params, dashboard wiring (T037-T039)
+
+#### What was done
+
+- T037: Created `components/FilterBar.tsx` — `"use client"` component; 6 pills (ALL, PENDING, PAID, DECLINED, CANCELLED, EXPIRED); active pill filled blue, inactive outlined; `router.push` updates `?status=` (ALL removes the param); invalid `activeStatus` prop falls back to ALL; accepts `basePath` prop for reuse on both dashboards
+- T038: Updated `GET /api/requests` and `GET /api/requests/incoming` — both now accept `NextRequest`; `?status=` param filtered AFTER `toPaymentRequestDTO()` so EXPIRED catches implicitly-expired PENDING rows; `VALID_STATUSES` allowlist; missing/invalid/ALL returns full array
+- T039: Updated both dashboard server component pages — accept `searchParams.status` from Next.js App Router; same post-DTO filter logic; render `<FilterBar activeStatus basePath>`; contextual empty-state messages for filtered vs no-records state
+
+#### Why it was done
+
+- Delivers AC14 (filter pills) and the server-side filter correctness requirement from the research doc (EXPIRED must be computed post-DTO, not at DB level)
+
+#### Artifacts changed
+
+- `components/FilterBar.tsx` (new)
+- `app/api/requests/route.ts`
+- `app/api/requests/incoming/route.ts`
+- `app/(protected)/dashboard/outgoing/page.tsx`
+- `app/(protected)/dashboard/incoming/page.tsx`
+- `specs/001-p2p-payment-request/tasks.md` (T037-T039 marked complete)
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` → 5/5 checks green
+- `npm run build` → 13/13 pages, TypeScript strict, zero errors; dashboard pages grew 566B → 873B (FilterBar client chunk expected)
+
+---
+
 ### 2026-04-13 — Batch B: phone recipient API path + form toggle (T035-T036)
 
 #### What was done

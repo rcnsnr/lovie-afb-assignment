@@ -163,6 +163,9 @@ Use this document to show how AI was used in a controlled way.
 - Phase 11 Batch B (T035–T036): phone recipient API path + form toggle complete.
   `.superRefine()` exactly-one-of schema, branched `findUnique`, pill toggle UI.
   `phase_closeout.sh` all 5 checks pass. No corrections required. Branch pushed.
+- Phase 12 Batch C (T037–T039): status filter complete — FilterBar component, post-DTO
+  API filtering on both GET handlers, dashboard wiring with searchParams + contextual
+  empty states. `phase_closeout.sh` all 5 checks pass. No corrections required.
 - AI drove all file creation; human review focused on confirming directory structure
   against the plan and approving the `prisma init` workaround decision.
 
