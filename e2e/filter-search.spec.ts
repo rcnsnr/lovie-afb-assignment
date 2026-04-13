@@ -42,13 +42,13 @@ test("AC14 — Both dashboards show 6 status filter pills", async ({ page }) => 
 test("AC15 — PAID filter updates URL and excludes non-PAID requests", async ({ page }) => {
   await loginAs(page, "alice@example.com");
 
-  // Create a fresh PENDING request so the dashboard is not empty
-  await createRequest(page, "bob@example.com", "15.00");
+  // Create a fresh PENDING request with a unique amount to avoid collisions
+  await createRequest(page, "bob@example.com", "15.15");
 
   await page.goto("/dashboard/outgoing");
 
   // The PENDING request is visible under ALL
-  await expect(page.getByText("$15.00").first()).toBeVisible();
+  await expect(page.getByText("$15.15").first()).toBeVisible();
 
   // Click PAID pill
   await page.getByRole("button", { name: "PAID", exact: true }).click();
@@ -57,7 +57,7 @@ test("AC15 — PAID filter updates URL and excludes non-PAID requests", async ({
   await expect(page).toHaveURL(/[?&]status=PAID/);
 
   // The PENDING request we created is NOT visible under the PAID filter
-  await expect(page.getByText("$15.00")).not.toBeVisible();
+  await expect(page.getByText("$15.15")).not.toBeVisible();
 });
 
 /**
