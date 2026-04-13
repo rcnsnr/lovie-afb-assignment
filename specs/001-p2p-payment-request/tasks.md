@@ -956,7 +956,7 @@ the existing 13. Video and trace artifacts collected for all.
 
 ### T048
 
-- [ ] T048 Re-run full E2E evidence suite against production, collect artifacts for all 25 ACs, update README and docs
+- [x] T048 Re-run full E2E evidence suite against production, collect artifacts for all 25 ACs, update README and docs
 - objective: Run `BASE_URL=https://lovie-afb-assignment.vercel.app bash scripts/3-run_e2e_evidence.sh .`
   after deploying all T032-T047 changes. Collect 25 video + 25 trace artifacts (15
   existing + 10 new from T045-T047 split across 3 spec files). Update README evidence

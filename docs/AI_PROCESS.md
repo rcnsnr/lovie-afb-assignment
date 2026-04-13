@@ -4,19 +4,19 @@ Use this document to show how AI was used in a controlled way.
 
 ## Tools Used
 
-| Stage             | Tool        | Why                                                               |
-| ----------------- | ----------- | ----------------------------------------------------------------- |
-| Spec framing      | Claude Code | Derived feature spec from README + CLAUDE.md context              |
-| Clarification     | Claude Code | Structured Q&A — 2 targeted questions, user answered              |
-| Spec review       | Claude Code | Skill-driven audit; 5 fixes identified and applied                |
-| Checklist         | Claude Code | 52-item requirements quality checklist generated                  |
-| Planning          | Claude Code | Technical plan, data model, API contracts produced                |
-| Edge-case audit   | Claude Code | 6 gaps found; corrections applied to spec/plan only               |
-| Task breakdown    | Claude Code | 31 tasks across 9 phases; full AC-to-task mapping                 |
-| Artifact analysis | Claude Code | 0 CRITICAL, 6 findings; 100% AC coverage confirmed                |
-| Implementation    | Claude Code | T001–T031 complete across 9 phases; T032–T044 gap-fix batches A–E |
-| Review            | Claude Code | `/ship-check` skill; final audit before submission                |
-| Evidence prep     | Claude Code | 15/15 E2E green on production; 15 videos + traces                 |
+| Stage             | Tool        | Why                                                      |
+| ----------------- | ----------- | -------------------------------------------------------- |
+| Spec framing      | Claude Code | Derived feature spec from README + CLAUDE.md context     |
+| Clarification     | Claude Code | Structured Q&A — 2 targeted questions, user answered     |
+| Spec review       | Claude Code | Skill-driven audit; 5 fixes identified and applied       |
+| Checklist         | Claude Code | 52-item requirements quality checklist generated         |
+| Planning          | Claude Code | Technical plan, data model, API contracts produced       |
+| Edge-case audit   | Claude Code | 6 gaps found; corrections applied to spec/plan only      |
+| Task breakdown    | Claude Code | 31 tasks across 9 phases; full AC-to-task mapping        |
+| Artifact analysis | Claude Code | 0 CRITICAL, 6 findings; 100% AC coverage confirmed       |
+| Implementation    | Claude Code | T001–T031 across 9 phases; T032–T048 gap-fix batches A–F |
+| Review            | Claude Code | `/ship-check` skill; final audit before submission       |
+| Evidence prep     | Claude Code | 27/27 E2E green on production; 27 videos + 27 traces     |
 
 ## Representative Prompt Patterns
 
