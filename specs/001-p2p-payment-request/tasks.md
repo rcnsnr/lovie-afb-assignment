@@ -682,7 +682,7 @@ After this batch: AC14, AC15, AC16 verifiable manually and in E2E.
 
 ### T037
 
-- [ ] T037 [US2] Create `components/FilterBar.tsx` — horizontal pill buttons for status filter
+- [x] T037 [US2] Create `components/FilterBar.tsx` — horizontal pill buttons for status filter
 - objective: Client component that renders 6 pill buttons (ALL, PENDING, PAID, DECLINED,
   CANCELLED, EXPIRED). The active pill is visually highlighted. Clicking a pill calls
   `router.push` to update `?status=` in the URL (removes param for ALL). Reads current
