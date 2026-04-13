@@ -19,6 +19,42 @@ Use it to capture:
 
 ---
 
+### 2026-04-13 — Vercel preview deployment fix
+
+#### What was done
+
+- Synced `DATABASE_URL` and `SESSION_SECRET` to Vercel Preview scope, scoped to
+  `feat/phone-filter-search-pay-simulation` branch (both were previously Production-only)
+- Triggered a fresh preview redeploy — build succeeded
+- Updated `scripts/set-vercel-env.sh` to use `npm exec -- vercel` instead of `npx vercel`
+  (`npx vercel` resolves to the npm CLI in this npm version, not the Vercel CLI)
+
+#### Why it was done
+
+- Preview deployments were showing Application errors because env vars were absent in
+  the Preview scope; the app cannot boot without `DATABASE_URL` and `SESSION_SECRET`
+- Fixed proactively before T046-T048 to ensure the preview URL is testable during
+  E2E evidence collection
+
+#### Artifacts changed
+
+- `scripts/set-vercel-env.sh` (CLI invocation patched)
+- Vercel project config (env vars added to Preview scope via CLI — not a repo file)
+
+#### Validation
+
+- `npm exec -- vercel env ls` confirmed both vars present in Preview scope
+- Preview redeploy completed successfully (green build, new preview URL generated)
+
+#### Notes
+
+- For future feature branches, `bash scripts/set-vercel-env.sh --include-preview`
+  will sync both vars to the Preview scope automatically
+- `DIRECT_URL` remains local-only and is intentionally excluded from Vercel (see
+  existing BUILD_NOTES.md policy)
+
+---
+
 ### 2026-04-13 — Batch E: pay simulation — delay, spinner, success banner (T043-T044)
 
 #### What was done
