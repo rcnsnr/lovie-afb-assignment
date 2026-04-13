@@ -23,6 +23,9 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Simulate payment rail latency — 2–3s random delay (spec AC24)
+  await new Promise((r) => setTimeout(r, 2000 + Math.random() * 1000));
+
   // Conditional write: only succeeds if status is PENDING and not yet expired (CR1+CR2)
   const now = new Date();
   const result = await prisma.paymentRequest.updateMany({

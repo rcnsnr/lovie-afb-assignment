@@ -40,6 +40,8 @@ export default function RequestDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [paySuccess, setPaySuccess] = useState(false);
 
   const fetchRequest = useCallback(async () => {
     const [reqRes, meRes] = await Promise.all([
@@ -64,9 +66,18 @@ export default function RequestDetailPage() {
     fetchRequest();
   }, [fetchRequest]);
 
+  // Auto-dismiss success banner after 5s; clean up timer on unmount
+  useEffect(() => {
+    if (!paySuccess) return;
+    const t = setTimeout(() => setPaySuccess(false), 5000);
+    return () => clearTimeout(t);
+  }, [paySuccess]);
+
   async function handleAction(action: "pay" | "decline" | "cancel") {
     if (!req) return;
     setActionError(null);
+    setPaySuccess(false);
+    setCurrentAction(action);
     setLoading(true);
     try {
       const res = await fetch(`/api/requests/${req.id}/${action}`, {
@@ -75,6 +86,7 @@ export default function RequestDetailPage() {
       if (res.ok) {
         const data = await res.json();
         setReq(data.request);
+        if (action === "pay") setPaySuccess(true);
       } else {
         const data = await res.json();
         setActionError(data.error ?? "Action failed. Please try again.");
@@ -85,6 +97,7 @@ export default function RequestDetailPage() {
       setActionError("Network error — please try again.");
     } finally {
       setLoading(false);
+      setCurrentAction(null);
     }
   }
 
@@ -150,6 +163,20 @@ export default function RequestDetailPage() {
           )}
         </div>
 
+        {/* Pay success banner — above action area, auto-dismissed after 5s */}
+        {paySuccess && (
+          <div className="mx-6 mt-4 flex items-center justify-between rounded-lg bg-green-50 px-4 py-3">
+            <span className="text-sm font-medium text-green-800">Payment successful!</span>
+            <button
+              onClick={() => setPaySuccess(false)}
+              className="ml-3 text-green-600 hover:text-green-800"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Action buttons — shown only for correct actor on PENDING requests */}
         {isPending && (isRecipient || isRequester) && (
           <div className="border-t border-gray-100 px-6 py-4">
@@ -164,9 +191,36 @@ export default function RequestDetailPage() {
                   <button
                     onClick={() => handleAction("pay")}
                     disabled={loading}
-                    className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                    className="flex inline-flex flex-1 items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
                   >
-                    {loading ? "Processing…" : "Pay"}
+                    {loading && currentAction === "pay" ? (
+                      <>
+                        <svg
+                          className="mr-2 h-4 w-4 animate-spin"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          data-testid="pay-spinner"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
+                        </svg>
+                        Processing payment…
+                      </>
+                    ) : (
+                      "Pay"
+                    )}
                   </button>
                   <button
                     onClick={() => handleAction("decline")}
@@ -183,7 +237,7 @@ export default function RequestDetailPage() {
                   disabled={loading}
                   className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                 >
-                  {loading ? "Cancelling…" : "Cancel request"}
+                  {loading && currentAction === "cancel" ? "Cancelling…" : "Cancel request"}
                 </button>
               )}
             </div>

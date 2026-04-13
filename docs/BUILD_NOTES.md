@@ -47,6 +47,14 @@ Use this file as a compact log of meaningful execution decisions.
 - Helper script: `scripts/set-vercel-env.sh` now syncs Production only by default.
   Preview sync is opt-in with `--include-preview`; `DIRECT_URL` is opt-in with `--include-direct-url`.
 
+## Pay Simulation Delay (T043)
+
+- Date: 2026-04-13
+- Decision: `POST /api/requests/[id]/pay` inserts `await new Promise(r => setTimeout(r, 2000 + Math.random() * 1000))` — a 2–3s random delay — between the 403 authorization check and the conditional `updateMany` write.
+- Reason: Spec AC24 requires visible payment processing latency to demonstrate UI feedback (spinner). The delay simulates a real payment rail without needing an external service.
+- Important placement: delay is AFTER auth check (403/404 paths remain immediate) and BEFORE the write (so the write still executes after the delay). Decline and Cancel routes are NOT modified — they remain instant per spec.
+- Impact: Pay action takes 2–3s end-to-end. No business logic or state transitions changed.
+
 ## Deployment Recovery: Supabase Pooler Shard + Credentials
 
 - Date: 2026-04-12

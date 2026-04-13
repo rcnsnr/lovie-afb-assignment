@@ -828,7 +828,7 @@ on the client. Thin and isolated — only two files touched.
 
 ### T043
 
-- [ ] T043 [US4] Add 2-3s artificial delay to `POST /api/requests/[id]/pay` in `app/api/requests/[id]/pay/route.ts`
+- [x] T043 [US4] Add 2-3s artificial delay to `POST /api/requests/[id]/pay` in `app/api/requests/[id]/pay/route.ts`
 - objective: Insert `await new Promise(r => setTimeout(r, 2000 + Math.random() * 1000))`
   AFTER the 403 authorization check and BEFORE the conditional `updateMany` write. This
   simulates payment rail latency without changing any business logic or state transitions.
@@ -848,7 +848,7 @@ on the client. Thin and isolated — only two files touched.
 
 ### T044
 
-- [ ] T044 [US4] Update request detail page `app/(protected)/requests/[id]/page.tsx` — add spinner to Pay button, add `paySuccess` state and auto-dismiss success banner
+- [x] T044 [US4] Update request detail page `app/(protected)/requests/[id]/page.tsx` — add spinner to Pay button, add `paySuccess` state and auto-dismiss success banner
 - objective: Three changes to the existing client component:
   (1) When `loading` is true and the action is `pay`, show an `animate-spin` SVG spinner
   inline in the Pay button alongside "Processing payment…" text.
