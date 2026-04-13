@@ -19,6 +19,123 @@ Use it to capture:
 
 ---
 
+### 2026-04-14 — Batch C-2: Contact summary card dashboard integration (T051, T052, T053)
+
+#### What was done
+
+- T051: updated `app/(protected)/dashboard/outgoing/page.tsx` — imports
+  `resolveMatchedContact` + `computeContactMetrics` from `lib/contact-metrics`,
+  imports `ContactSummaryCard`; resolves the matched contact from `allDtos`
+  (pre-status-filter) with direction `"outgoing"`; conditionally awaits
+  `computeContactMetrics(session.userId, matchedContact.id)` when a single contact
+  matches and search is non-empty; wraps `<FilterBar>`, `<SearchInput>`,
+  `<ContactSummaryCard>`, and the empty-state paragraph in a surface div
+  (`data-testid="controls-surface"`, slate-50/ring-slate-200 palette)
+- T052: mirrored the same changes on `app/(protected)/dashboard/incoming/page.tsx`
+  with direction `"incoming"` — counterparty is the requester
+- T053: updated `components/FilterBar.tsx` active/inactive pill classes to the
+  brand-adjacent palette: active `bg-blue-600 text-white shadow-sm`, inactive
+  `bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100`
+
+#### Why it was done
+
+- AC26–AC32 require an inline contact summary card on both dashboards when search
+  resolves to exactly one counterparty
+- Detection deliberately runs against `allDtos` (not `statusFiltered`) so the card
+  persists across status filter changes per AC30
+- Empty-state paragraph lives inside the surface wrapper so the layout surface does
+  not collapse on empty lists per AC32
+
+#### Artifacts changed
+
+- `app/(protected)/dashboard/outgoing/page.tsx` — detection call + await + surface wrapper + card render
+- `app/(protected)/dashboard/incoming/page.tsx` — mirror of outgoing with direction `"incoming"`
+- `components/FilterBar.tsx` — active + inactive pill className swap
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` — 5/5 green (required one markdownlint fix in
+  `docs/AI_PROCESS.md` for duplicate H3 headings across phase sections)
+- `npm run build` — compiled successfully; dashboard pages 1.21 kB → 1.23 kB from
+  ContactSummaryCard import
+- `npm run lint` — zero warnings
+- SSR smoke-test via curl: AC26+AC27+AC28 (`?search=bob` renders card with phone
+  `+15550002222` + 5 metric labels), AC29-a/b/c (zero match / multi match / empty
+  search all hide card, surface still present), T052 mirror (Bob searching Alice
+  renders card with phone `+15550001111`)
+- Production regression: filter-search E2E suite **6/6 pass** against
+  `lovie-afb-assignment.vercel.app` — confirms no regression in existing AC14–AC19
+  behavior
+
+#### Notes
+
+- Local Playwright AC17/AC19 showed pre-existing flakiness (search-input fill not
+  triggering URL change in debounce window); reproduced with my changes stashed,
+  so not introduced by Batch C-2. Production runs confirm the tests are reliable
+  against the deployed URL — defer final validation to Batch C-4 production run
+- No API contract changes, no DB schema changes, no new routes
+- Empty-state paragraph moved from being a sibling of the list to being inside the
+  surface wrapper — this is the AC32 requirement and matches the plan addendum
+
+---
+
+### 2026-04-14 — Batch C-1: Contact summary card foundation (T049, T050)
+
+#### What was done
+
+- Added AC26–AC32 to `specs/001-p2p-payment-request/spec.md` via `/speckit-specify`
+  (F13 flow, Session 2026-04-14 clarifications, new Screens/Views entries, 7 new ACs)
+- Generated `specs/001-p2p-payment-request/checklists/contact-summary-card.md` — 15 items,
+  all passing
+- Extended `specs/001-p2p-payment-request/plan.md` with an addendum for AC26–AC32:
+  single-contact detection algorithm, metrics query shape, ContactSummaryCard props,
+  UI polish scope, task batches C-1 through C-4
+- Extended `specs/001-p2p-payment-request/research.md` with 3 new decisions:
+  no new API endpoint, shared helper module, detection from `allDtos` not filtered set
+- Extended `specs/001-p2p-payment-request/tasks.md` with T049–T056 across Phases 16–19
+- T049: created `lib/contact-metrics.ts` — `resolveMatchedContact(search, dtos, direction)`
+  - `computeContactMetrics(userId, contactId)` + `ContactMetrics` type export
+- T050: created `components/ContactSummaryCard.tsx` — pure server-safe display component,
+  no client hooks, `data-testid="contact-summary-card"`, phone line omitted when null,
+  `formatCents()` for all dollar amounts, desktop two-column / mobile stacked layout
+
+#### Why it was done
+
+- User requested a lightweight inline contact summary card on dashboards when search
+  resolves to exactly one counterparty — reviewer-friendly UI enhancement
+- Scope is deliberately additive: no new entities, no new API routes, no design system
+- Batch C-1 establishes the foundation (new files) before touching dashboard pages in C-2
+
+#### Artifacts changed
+
+- `specs/001-p2p-payment-request/spec.md` — AC26–AC32 + F13 + Screens/Views added
+- `specs/001-p2p-payment-request/plan.md` — AC26–AC32 addendum appended
+- `specs/001-p2p-payment-request/research.md` — 3 new decision records
+- `specs/001-p2p-payment-request/tasks.md` — T049–T056 added across Phases 16–19
+- `specs/001-p2p-payment-request/checklists/contact-summary-card.md` — new, 15/15 passing
+- `lib/contact-metrics.ts` (new)
+- `components/ContactSummaryCard.tsx` (new)
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` — 5/5 green (lint, typecheck, prisma validate, prisma generate, auto-fix)
+- `npm run build` — compiled successfully, zero TypeScript errors
+- Dashboard page bundle sizes unchanged (new files have no consumers yet)
+
+#### Notes
+
+- Both new files compile in isolation; no dashboard page imports them yet — intentional
+  boundary for Batch C-1 so the batch stops cleanly before integration
+- `spec-readiness.md` checklist (52 items, legacy) was explicitly treated as a non-gate
+  for this batch; `contact-summary-card.md` and `requirements.md` are the active signal
+- Detection intentionally uses `allDtos` (pre-status-filter) so the card survives status
+  filter changes per AC30 — the resolved contact's identity should not disappear just
+  because the user toggled PENDING/PAID
+- CANCELLED and EXPIRED explicitly excluded from dollar aggregates per F13 step 3; their
+  counts still roll into `outgoingCount`/`incomingCount`
+
+---
+
 ### 2026-04-14 — Batch F: E2E evidence collection (T045-T048)
 
 #### What was done

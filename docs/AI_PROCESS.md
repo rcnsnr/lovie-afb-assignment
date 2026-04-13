@@ -370,3 +370,78 @@ expiresAt > NOW()`); `count === 0` → 409; second `findUnique` for DTO (U3 patt
 
 - build/runtime security posture is partly code and partly platform; the repo should document what was verified live versus what still requires dashboard confirmation
 - public-assignment repos benefit from explicit package/release artifacts because binary evidence files are usually gitignored
+
+## Phase 16 — Contact summary card scope extension & Batch C-1 (2026-04-14)
+
+### What AI did in Phase 16
+
+- ran the full Spec-Kit loop again for an additive scope (`/speckit-specify` →
+  `/speckit-clarify` → `/speckit-checklist` → `/speckit-plan` → `/speckit-tasks` →
+  `/speckit-implement`) without rewriting the existing spec — the new AC26–AC32 work
+  was appended as a Session 2026-04-14 clarification block, F13 flow, and addendum
+- produced a plan addendum for `plan.md` rather than a separate plan file, so reviewers
+  see the full feature plan in one place
+- split implementation into 4 stop-after-each-batch groups (C-1 foundation, C-2
+  integration, C-3 E2E, C-4 closeout/evidence) at user's request for reviewable slices
+- implemented T049 (`lib/contact-metrics.ts`) and T050 (`components/ContactSummaryCard.tsx`)
+  as new files with zero import consumers yet — the batch deliberately stops before
+  touching dashboard pages so the next batch can be reviewed in isolation
+- extracted shared logic (`resolveMatchedContact` + `computeContactMetrics`) into a
+  helper module instead of inlining in each dashboard page, justified only because
+  both pages would otherwise have identical ~50-line blocks
+
+### Where human judgment was needed in Phase 16
+
+- user flagged that `spec-readiness.md` legacy checklist (52 incomplete items)
+  should not gate AC26 work; AI correctly surfaced the status but the call to treat
+  it as legacy rather than mandatory came from the user
+- scope discipline: user explicitly asked for additive-only changes; AI kept the plan
+  narrow (no new API routes, no new entities, no Tailwind config changes)
+
+### Patterns worth noting from Phase 16
+
+- appending new ACs to an existing spec is cleaner than forking a new spec directory
+  when the feature is a true enhancement of existing flows — preserves traceability
+  and avoids split artifact locations
+- for pure display components (no state, no data fetching), skipping `"use client"`
+  keeps them server-renderable and reduces the client bundle — confirmed via build
+  output (dashboard page bundle unchanged at 1.21 kB after foundation batch)
+- detection logic intentionally runs on pre-status-filter DTOs so card identity is
+  stable under filter changes; this matches AC30 and required a deliberate decision
+  recorded in `research.md` rather than inferred from code
+
+## Phase 17 — Contact summary card dashboard integration, Batch C-2 (2026-04-14)
+
+### What AI did in Phase 17
+
+- wired `lib/contact-metrics.ts` and `components/ContactSummaryCard.tsx` into both
+  dashboard server components in a mirror pattern — only the `direction` argument
+  and the counterparty field names (recipient vs requester) differ
+- added the `data-testid="controls-surface"` wrapper div and moved the empty-state
+  paragraph inside it so AC32's visual-grouping and empty-state requirements are
+  satisfied without a redesign
+- swapped FilterBar active/inactive pill classes to the brand-adjacent slate/blue
+  palette — a single className conditional update, no structural change
+- validated behavior end-to-end via `curl` SSR checks (AC26+AC27+AC28 single match,
+  AC29-a/b/c card-hidden cases, T052 incoming mirror) rather than relying on the
+  local Playwright run which showed pre-existing flakiness on SearchInput typing
+- ran the full production regression suite (`BASE_URL=…vercel.app` filter-search)
+  to confirm existing AC14–AC19 coverage still passes before declaring the batch
+  complete
+
+### Where human judgment was needed in Phase 17
+
+- diagnosing the local Playwright AC17/AC19 failure required stashing the batch and
+  re-running: confirmed the flakiness is pre-existing, not introduced by C-2
+- choice to defer final AC14–AC19 re-validation to Batch C-4's production evidence
+  run (where the tests are reliable) rather than chasing a local-only flaky repro
+
+### Patterns worth noting from Phase 17
+
+- mirror-pattern batches (outgoing ↔ incoming) benefit from implementing one side
+  first, validating it, then duplicating — catches directional bugs cheaply
+- when a local test fails and the change surface is small, stashing the change and
+  re-running is a 30-second confidence check that avoids chasing phantom regressions
+- SSR smoke-testing with curl + grep is a reliable substitute for E2E when the
+  question is "does the page render the right DOM nodes?" — faster than Playwright
+  and doesn't depend on browser hydration timing
