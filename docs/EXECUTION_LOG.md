@@ -19,6 +19,51 @@ Use it to capture:
 
 ---
 
+### 2026-04-14 — Batch F: E2E evidence collection (T045-T048)
+
+#### What was done
+
+- T045: `e2e/phone.spec.ts` — 4 tests: toggle visibility, phone create, not-found, self-request
+- T046: `e2e/filter-search.spec.ts` — 6 tests: pill presence, PAID filter, EXPIRED seeded
+  fixture, search "bob", combined filter+search, soft navigation (window marker)
+- T047: `e2e/pay-simulation.spec.ts` — 2 tests: spinner+disabled during pay, success banner
+  - no spinner on Decline
+- T048: Merged feature branch to main, deployed to production, re-seeded production DB
+  (phone numbers), ran 27/27 E2E green, collected 27 videos + 27 traces
+- Fix: AC15 changed from `$15.00` to `$15.15` to avoid strict mode collision with
+  happy-path data accumulated in the shared production DB
+
+#### Why it was done
+
+- T045-T047 provide Playwright video/trace evidence for all 12 new ACs (AC14-AC25)
+- T048 is the final evidence collection against the production URL
+- Re-seeding was required because existing users had NULL phone after the column was
+  added via migration but seed hadn't been re-run on production
+
+#### Artifacts changed
+
+- `e2e/phone.spec.ts` (new)
+- `e2e/filter-search.spec.ts` (new)
+- `e2e/pay-simulation.spec.ts` (new)
+- `docs/VIDEO_EVIDENCE_GUIDE.md` (updated artifact list to 27)
+- `docs/AI_PROCESS.md` (updated to T032-T048, 27/27)
+- `artifacts/videos/` (27 .webm files)
+- `artifacts/traces/` (27 .zip files)
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` — 5/5 green
+- 27/27 E2E tests pass against `lovie-afb-assignment.vercel.app`
+- All commits pushed to both `main` and `feat/phone-filter-search-pay-simulation`
+
+#### Notes
+
+- First run had 3 failures: AC15 (strict mode collision), AC21/AC23 (NULL phone in prod DB)
+- Both root causes were infra/data issues, not code bugs — fixed by unique amount + re-seed
+- Feature branch and main are now in sync
+
+---
+
 ### 2026-04-13 — Vercel preview deployment fix
 
 #### What was done
