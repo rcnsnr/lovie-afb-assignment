@@ -19,6 +19,50 @@ Use it to capture:
 
 ---
 
+### 2026-04-13 — Batch E: pay simulation — delay, spinner, success banner (T043-T044)
+
+#### What was done
+
+- T043: Added 2–3s artificial delay to `POST /api/requests/[id]/pay` — `await new
+Promise(r => setTimeout(r, 2000 + Math.random() * 1000))` inserted AFTER the 403
+  authorization guard and BEFORE the conditional `updateMany` write. 403/404 paths
+  remain immediate; the delay is only hit by authorized PENDING pay attempts. Decline
+  and Cancel routes untouched. Decision documented in `docs/BUILD_NOTES.md`.
+- T044: Updated `app/(protected)/requests/[id]/page.tsx` — added `currentAction` and
+  `paySuccess` states. Pay button renders an `animate-spin` SVG (`data-testid="pay-spinner"`)
+  with "Processing payment…" text while the pay request is in flight. On success,
+  `paySuccess` is set to true; a green "Payment successful!" banner renders above the
+  action area with a manual X dismiss button. A `useEffect` auto-clears `paySuccess`
+  after 5000ms with timer cleanup on unmount. Decline and Cancel buttons are unchanged.
+  `paySuccess` is reset at the start of any subsequent action call.
+
+#### Why it was done
+
+- AC24 requires visible pay processing latency and spinner; AC25 requires a success
+  confirmation banner that auto-dismisses. Both are reviewer-facing evidence points.
+- Delay is placed correctly to maintain lifecycle correctness: auth errors remain
+  fast-fail; the simulated latency only applies to the actual payment operation.
+
+#### Artifacts changed
+
+- `app/api/requests/[id]/pay/route.ts` (delay added)
+- `app/(protected)/requests/[id]/page.tsx` (spinner + success banner)
+- `docs/BUILD_NOTES.md` (delay decision documented)
+
+#### Validation
+
+- `npm run build` — 0 TypeScript errors, 0 lint warnings
+- `bash scripts/phase_closeout.sh` — 5/5 green
+- Committed: `feat(T043-T044): pay simulation delay + spinner + success banner`
+- Pushed: `feat/phone-filter-search-pay-simulation`
+
+#### Notes
+
+- `data-testid="pay-spinner"` attribute on the SVG aligns with T047 E2E locator requirements
+- Timer cleanup via `useEffect` return prevents state updates on unmounted component
+
+---
+
 ### 2026-04-13 — Batch D: search filter — API params, dashboard wiring, SearchInput (T040-T042)
 
 #### What was done
