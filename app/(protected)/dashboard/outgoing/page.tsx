@@ -5,6 +5,9 @@ import { toPaymentRequestDTO } from "@/lib/dto";
 import { PaymentRequestDTO } from "@/lib/dto";
 import { redirect } from "next/navigation";
 import { ExpiryCountdown } from "@/components/ExpiryCountdown";
+import { FilterBar } from "@/components/FilterBar";
+
+const VALID_STATUSES = ["PENDING", "PAID", "DECLINED", "CANCELLED", "EXPIRED"] as const;
 
 function StatusBadge({ status }: { status: string }) {
   const colours: Record<string, string> = {
@@ -42,7 +45,11 @@ function RequestRow({ req }: { req: PaymentRequestDTO }) {
   );
 }
 
-export default async function OutgoingDashboardPage() {
+export default async function OutgoingDashboardPage({
+  searchParams,
+}: {
+  searchParams: { status?: string };
+}) {
   const session = await getSession();
   if (!session.userId) redirect("/login");
 
@@ -51,7 +58,16 @@ export default async function OutgoingDashboardPage() {
     include: { requester: true, recipient: true },
     orderBy: { createdAt: "desc" },
   });
-  const requests = rows.map(toPaymentRequestDTO);
+
+  // Filter AFTER toPaymentRequestDTO so EXPIRED catches implicitly-expired PENDING rows
+  const allDtos = rows.map(toPaymentRequestDTO);
+  const statusParam = searchParams.status?.toUpperCase();
+  const activeStatus =
+    statusParam && VALID_STATUSES.includes(statusParam as (typeof VALID_STATUSES)[number])
+      ? statusParam
+      : "ALL";
+  const requests =
+    activeStatus === "ALL" ? allDtos : allDtos.filter((r) => r.status === activeStatus);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -72,13 +88,23 @@ export default async function OutgoingDashboardPage() {
         </Link>
       </div>
 
+      <div className="mb-4">
+        <FilterBar activeStatus={activeStatus} basePath="/dashboard/outgoing" />
+      </div>
+
       {requests.length === 0 ? (
         <p className="py-12 text-center text-sm text-gray-500">
-          No outgoing requests yet.{" "}
-          <Link href="/requests/new" className="text-blue-600 hover:underline">
-            Send one now
-          </Link>
-          .
+          {activeStatus === "ALL" ? (
+            <>
+              No outgoing requests yet.{" "}
+              <Link href="/requests/new" className="text-blue-600 hover:underline">
+                Send one now
+              </Link>
+              .
+            </>
+          ) : (
+            `No ${activeStatus.toLowerCase()} requests.`
+          )}
         </p>
       ) : (
         <div className="divide-y divide-gray-100 rounded-xl bg-white shadow-sm ring-1 ring-gray-200">

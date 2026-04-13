@@ -701,7 +701,7 @@ After this batch: AC14, AC15, AC16 verifiable manually and in E2E.
 
 ### T038
 
-- [ ] T038 [US2] Update `GET /api/requests` and `GET /api/requests/incoming` in their route files to apply `?status=` filtering after `getEffectiveStatus()` computation
+- [x] T038 [US2] Update `GET /api/requests` and `GET /api/requests/incoming` in their route files to apply `?status=` filtering after `getEffectiveStatus()` computation
 - objective: Accept `?status=` query param. Fetch all user records from DB (unchanged).
   Map to DTOs (which applies `getEffectiveStatus()`). Filter the DTO array by effective
   status. Return filtered result. ALL or missing param returns full array.
@@ -721,7 +721,7 @@ After this batch: AC14, AC15, AC16 verifiable manually and in E2E.
 
 ### T039
 
-- [ ] T039 [US2] Update outgoing and incoming dashboard pages to read `searchParams.status`, pass to API fetch URL, and render `<FilterBar>` with current status value
+- [x] T039 [US2] Update outgoing and incoming dashboard pages to read `searchParams.status`, pass to API fetch URL, and render `<FilterBar>` with current status value
 - objective: Both server component pages receive `searchParams` from Next.js App Router.
   Pass `?status=` to the respective API fetch call. Pass the current status value to
   `<FilterBar>` as `activeStatus` prop. When the filtered result is empty, show "No
