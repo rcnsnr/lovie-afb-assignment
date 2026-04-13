@@ -48,6 +48,38 @@ processing with a brief delay before confirming success.
 - Q: Does counterparty search match phone numbers in addition to name and email? → A: Yes;
   search matches counterparty name, email, and phone number.
 
+### Session 2026-04-14
+
+- Gap: Search filters the list but gives no at-a-glance view of who the matched contact
+  is and how much history the current user has with them. → Decision: When the search
+  input produces exactly one matched counterparty, render an inline contact summary card
+  directly below the search input. The card shows that contact's identity (name, email,
+  phone if available) and relationship-level metrics scoped to the current signed-in
+  user only (not global system data).
+- Gap: Dashboard controls area (filters, search, list header) feels flat and reduces
+  scan-ability on mobile. → Decision: Apply a small, targeted UI polish to the controls
+  area only — spacing, grouping of filter pills and search, surface containers, empty
+  states, and the new contact summary card. No redesign of the full dashboard, no new
+  design system, no theming framework.
+- Gap: Color direction for the new surfaces is unspecified. → Decision: Soft, brand-adjacent
+  palette — light slate / misty blue surfaces, deep navy text, gentle blue-to-cyan accents
+  for primary emphasis. No full brand recreation; no logo or exact visual matching.
+- Q: How should the card behave when the search term partially matches multiple contacts
+  (e.g. typing "bo" and both "bob@…" and "boris@…" exist)? → A: Do not render the card
+  when more than one distinct counterparty matches; keep list filtering active only.
+  The card is only shown on exact single-contact match.
+- Q: What metrics does the card show? → A: Total outgoing requests with this contact,
+  total incoming requests with this contact, and three aggregated dollar totals scoped
+  to the current user ↔ contact relationship: pending amount, paid amount, declined
+  amount. Cancelled and expired requests are excluded from the dollar totals.
+- Q: Does the card interact with the active status filter? → A: The card's identity
+  and metrics stay stable regardless of the status pill. The card is driven by the
+  search query alone; metrics always reflect the full relationship, not the filtered
+  view. The request list below the search continues to reflect both search and status.
+- Q: What is the card's interaction model? → A: Inline, always expanded when shown.
+  No modal, no drawer, no "expand" state. Dismisses automatically when the user clears
+  the search or the search no longer matches exactly one contact.
+
 ## Goals
 
 - Allow a user to create a payment request directed at another user by email address.
@@ -62,6 +94,10 @@ processing with a brief delay before confirming success.
 - Allow a requester to identify a recipient by phone number as an alternative to email.
 - Simulate realistic payment processing latency when a recipient pays a request.
 - Provide clear, explicit success confirmation after payment completion.
+- Surface a lightweight inline contact summary (identity + current-user relationship
+  metrics) when the dashboard search narrows to exactly one counterparty.
+- Apply a small, targeted UI polish to the dashboard controls area so filtering,
+  searching, and the new contact summary read as a coherent, visually grouped cluster.
 
 ## Non-Goals
 
@@ -74,6 +110,15 @@ processing with a brief delay before confirming success.
 - No multi-currency support (single demo currency only).
 - No background job scheduling or queue infrastructure.
 - No support for requesting from or paying to anonymous or unauthenticated users.
+- No global contact directory, address book, or CRM surface — the contact summary card
+  is scoped to counterparties that already appear in the current user's request history
+  (or are resolvable via the same matching rules the search already uses).
+- No modal, drawer, or full-screen contact view as the default interaction; the card
+  is inline only.
+- No design system replacement or site-wide theming overhaul. The UI polish is scoped
+  to the dashboard controls area and the new summary card.
+- No brand logo integration, trademarked assets, or exact visual reproduction of any
+  third-party landing page. The color direction is inspiration only.
 
 ## Actors
 
@@ -208,6 +253,49 @@ This flow is an extension of F4. Error branch:
 2. The Decline and Cancel actions are not affected by this simulation and execute
    immediately as in the original F5 and F6 flows.
 
+### F13 — Inline contact summary on dashboard search
+
+1. User is on either the outgoing or incoming dashboard and begins typing in the search
+   input (same debounced behavior as F10).
+2. The system evaluates the current search term against the set of counterparties
+   reachable from the current user's request history on that dashboard (recipients on
+   outgoing, requesters on incoming). Matching uses the same case-insensitive substring
+   rules on name, email, and phone that F10 uses.
+3. If the search term matches **exactly one distinct counterparty**, an inline contact
+   summary card is rendered directly below the search input and above the request list.
+   The card contains:
+   - Identity fields: name, email, and phone (phone shown only when available).
+   - Relationship metrics, all scoped to the current signed-in user ↔ this contact:
+     - Total outgoing requests count (requests where current user is requester and this
+       contact is recipient).
+     - Total incoming requests count (requests where current user is recipient and this
+       contact is requester).
+     - Aggregated pending amount (sum of amounts across all effective-status PENDING
+       requests in either direction).
+     - Aggregated paid amount (sum of amounts across all PAID requests in either
+       direction).
+     - Aggregated declined amount (sum of amounts across all DECLINED requests in
+       either direction).
+   - Cancelled and EXPIRED requests are excluded from the dollar aggregates. Their
+     counts are included in the total outgoing/incoming counts if relevant.
+4. If the search term matches **multiple distinct counterparties**, no card is shown;
+   the list-level filter behavior from F10 applies unchanged.
+5. If the search term matches **no counterparty**, no card is shown; the list shows its
+   existing "no results" empty state.
+6. If the search input is **empty**, no card is shown; the dashboard renders the
+   standard list view for the current status filter.
+7. The card is independent of the active status filter. Identity and metrics do not
+   change when the user toggles a status pill. The request list below continues to
+   reflect both the search term and the selected status.
+8. The card dismisses automatically when the search no longer resolves to a single
+   counterparty or is cleared. There is no manual dismiss control.
+9. Layout:
+   - Desktop: card sits directly below the search input, full-width within the
+     dashboard content container, identity fields on the left, metrics on the right.
+   - Mobile: same card, stacked vertically — identity block first, then metrics block
+     below. The card never pushes critical controls (status pills, search input)
+     off-screen.
+
 ## Screens / Views
 
 - **Create request screen** — form with an Email/Phone toggle for recipient identification
@@ -224,6 +312,20 @@ This flow is an extension of F4. Error branch:
   conditional on viewer role and current request state. The Pay button enters a processing
   state (disabled + spinner) during payment simulation; on success, a green banner is shown
   that auto-dismisses after 5 seconds (or can be dismissed manually via X).
+- **Dashboard controls area** (applies to both outgoing and incoming dashboards) — a
+  visually grouped cluster containing the status filter pills, the search input, and
+  (when present) the inline contact summary card. The area uses a soft, brand-adjacent
+  color direction: light slate / misty blue surface backgrounds, deep navy text,
+  blue-to-cyan accents for the active pill and primary emphasis. Empty states (no
+  requests; no search results) are rendered inside the same visual container so the
+  layout does not collapse when the list is empty.
+- **Inline contact summary card** — lightweight card rendered inline below the search
+  input on both dashboards when the search resolves to exactly one counterparty.
+  Contains the contact's identity (name, email, phone when available) on the left and
+  relationship metrics (outgoing count, incoming count, pending/paid/declined totals)
+  on the right on desktop. On mobile the blocks stack vertically. The card uses the
+  same soft surface treatment as the controls area and visually reads as a peer of the
+  search input, not as a modal or floating overlay.
 
 ## Domain Rules
 
@@ -420,6 +522,34 @@ committing. The PENDING → DECLINED and PENDING → CANCELLED transitions are i
 - AC25: After successful payment, a distinct success confirmation message is displayed
   alongside the PAID status badge. Decline and Cancel actions are not affected by the
   payment delay.
+- AC26: When the dashboard search term resolves to exactly one counterparty on that
+  dashboard, an inline contact summary card is rendered directly below the search
+  input and above the request list. The card is not a modal and does not overlay any
+  existing content.
+- AC27: The contact summary card displays the matched contact's name, email, and
+  phone number when available. If the contact has no phone on record, the phone line
+  is omitted or shown as "—"; the card still renders.
+- AC28: The contact summary card displays four relationship metrics scoped to the
+  current signed-in user: total outgoing requests count (current user → contact),
+  total incoming requests count (contact → current user), aggregated pending amount,
+  and aggregated paid amount. A declined aggregate is also displayed. All dollar
+  aggregates are presented in the same display format used elsewhere in the app.
+- AC29: When the search term matches zero counterparties, or more than one distinct
+  counterparty, or the search input is empty, the contact summary card is not shown.
+  Clearing the search or broadening it to match multiple contacts removes the card.
+- AC30: Changing the status filter while the contact card is visible does not change
+  the card's identity fields or metrics. The card remains visible as long as the search
+  term still resolves to exactly one counterparty. The request list below the card
+  continues to reflect both the active status filter and the active search term.
+- AC31: On a viewport of 375px width or smaller, the contact card stacks its identity
+  block and metrics block vertically and remains fully visible without clipping or
+  horizontal scroll. The status filter pills and the search input remain reachable
+  without scrolling past the card.
+- AC32: The dashboard controls area (status pills, search input, contact card when
+  present) is rendered as a visually grouped cluster using the soft brand-adjacent
+  palette (light slate / misty blue surfaces, deep navy text, blue-to-cyan accents).
+  Empty-state messaging ("No results for …", "No requests yet") remains readable and
+  is rendered within the same visual container.
 
 ## Reviewer Notes
 
