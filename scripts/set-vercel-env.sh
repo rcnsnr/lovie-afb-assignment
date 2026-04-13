@@ -4,8 +4,8 @@
 # Preview sync is opt-in because sharing the same DB secret with Preview can be a review/security tradeoff.
 # DIRECT_URL is local-only by default and is excluded from Vercel unless --include-direct-url is passed.
 # Usage:
-#   npx vercel login        (one-time)
-#   npx vercel link         (link to existing project if not linked)
+#   npm exec -- vercel login        (one-time)
+#   npm exec -- vercel link         (link to existing project if not linked)
 #   bash scripts/set-vercel-env.sh [--include-preview] [--include-direct-url] [--deploy]
 set -euo pipefail
 
@@ -40,7 +40,7 @@ sync_scope() {
   local scope="$3"
 
   echo "→ Syncing $key to Vercel ($scope)..."
-  if ! npx vercel env add "$key" "$scope" --value "$value" --force --yes; then
+  if ! npm exec -- vercel env add "$key" "$scope" --value "$value" --force --yes; then
     if [ "$scope" = "preview" ]; then
       echo "WARN: preview sync failed for $key; production sync succeeded."
       return 0
@@ -90,7 +90,7 @@ fi
 if [ "$DEPLOY_AFTER_SYNC" = true ]; then
   echo ""
   echo "✓ Env vars set. Triggering redeploy..."
-  npx vercel --prod --yes
+  npm exec -- vercel --prod --yes
 else
   echo ""
   echo "✓ Env vars set. Skipping redeploy (pass --deploy to trigger it)."
