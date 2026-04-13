@@ -85,6 +85,36 @@ and implementation-defaults.md. This file documents decisions and alternatives c
 - **Alternatives considered**: Full client component dashboards — more complex; server
   component hybrid is simpler and preserves the existing data-fetching pattern.
 
+## Decision: Contact Card — No New API Endpoint
+
+- **Decision**: Relationship metrics computed server-side in dashboard page server components
+  via one additional `prisma.paymentRequest.findMany` query (both-direction, include requester
+  and recipient). No new `/api/contacts` or `/api/metrics` endpoint.
+- **Rationale**: Dashboard pages are already server components that call Prisma directly.
+  A new API endpoint would require client-state management in pages that currently have none.
+  Server-side computation keeps data access co-located with the page that needs it.
+- **Alternatives considered**: GET /api/contacts?search= endpoint — unnecessary indirection
+  at demo scale; adds a round-trip without architectural benefit.
+
+## Decision: Contact Card — Shared Helper Module
+
+- **Decision**: `lib/contact-metrics.ts` extracts `resolveMatchedContact` and
+  `computeContactMetrics` to avoid duplication between outgoing and incoming dashboard pages.
+- **Rationale**: Both pages share identical ~50-line detection + metrics logic. The extraction
+  removes a single concrete duplication. Not a general utility library.
+- **Alternatives considered**: Inline in each page — duplicates the same Prisma query and
+  aggregate logic in two files; maintainability cost > abstraction cost.
+
+## Decision: Contact Card — Detection Uses `allDtos` Not Status-Filtered Set
+
+- **Decision**: Single-contact detection iterates `allDtos` (the full pre-status-filter DTO
+  set for that dashboard direction), not the status-filtered subset.
+- **Rationale**: AC30 requires the card to remain visible when the status filter changes.
+  Using the status-filtered set would hide the card when the user switches to a status where
+  no requests with that contact happen to appear.
+- **Alternatives considered**: Detect from filtered set — fails AC30; contradicts spec F13
+  step 7 ("card is independent of the active status filter").
+
 ## Decision: Pay Simulation Delay Placement
 
 - **Decision**: `await new Promise(r => setTimeout(r, 2000 + Math.random() * 1000))`

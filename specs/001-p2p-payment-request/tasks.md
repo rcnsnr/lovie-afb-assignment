@@ -976,3 +976,259 @@ the existing 13. Video and trace artifacts collected for all.
   confirm `scripts/3-run_e2e_evidence.sh` handles the 3 new spec files correctly
 - docs impact: `README.md` evidence status line updated to "25/25 tests pass";
   `docs/VIDEO_EVIDENCE_GUIDE.md` artifact list updated
+
+---
+
+## Phase 16 — Contact Summary Card Foundation (AC26-AC32) — Batch C-1
+
+**Batch goal**: Create the two new modules — `lib/contact-metrics.ts` (detection + metrics
+computation) and `components/ContactSummaryCard.tsx` (display component). No dashboard
+page changes in this batch. After this batch: the card component is renderable in isolation
+and TypeScript strict compilation passes.
+
+**Batch checkpoint**: After T050, run `npm run build`. Zero TypeScript errors expected.
+The new files have no import consumers yet — normal at this stage.
+
+### T049
+
+- [x] T049 [P] [US6] Create `lib/contact-metrics.ts` — resolveMatchedContact + computeContactMetrics helpers
+- objective: Export two functions and one type:
+  (1) `type ContactMetrics = { outgoingCount: number; incomingCount: number; pendingAmount: number; paidAmount: number; declinedAmount: number }`
+  (2) `resolveMatchedContact(search: string, dtos: PaymentRequestDTO[], direction: "outgoing" | "incoming"): { id: string; name: string; email: string; phone: string | null } | null`
+  — Builds a Map<contactId, contactIdentity> from `dtos` (outgoing: use recipient fields `recipientId/recipientName/recipientEmail/recipientPhone`; incoming: use requester fields). Applies F10 case-insensitive substring matching on name/email/phone (all three, OR logic). Returns the single matched contact if exactly one survives; otherwise returns null.
+  (3) `computeContactMetrics(userId: string, contactId: string): Promise<ContactMetrics>`
+  — Fetches all PaymentRequests `WHERE (requesterId=userId AND recipientId=contactId) OR (requesterId=contactId AND recipientId=userId)` via Prisma (include requester and recipient). Maps through `toPaymentRequestDTO` to get effective statuses. Returns `outgoingCount` (DTOs where requesterId === userId), `incomingCount` (DTOs where recipientId === userId), `pendingAmount` (sum of amountMinorUnits where effectiveStatus === "PENDING"), `paidAmount` (PAID), `declinedAmount` (DECLINED). CANCELLED and EXPIRED excluded from dollar aggregates.
+- files: `lib/contact-metrics.ts`
+- validation: `npm run build` passes with zero TypeScript errors; exported types and
+  functions compile correctly; `ContactMetrics` type is exported and importable
+- evidence impact: enables AC26-AC30
+- recommended lane: implementation
+- reasoning / effort: pure computation functions; no new dependencies; medium
+- required review: confirm detection uses the input `dtos` array directly (single direction
+  from the caller, already the full unfiltered allDtos); confirm CANCELLED and EXPIRED
+  excluded from dollar aggregates; confirm `toPaymentRequestDTO` applied to metrics Prisma
+  query result (not raw rows) so effective status drives aggregate computation; confirm
+  function returns null on empty search string (caller passes `searchParam ?? ""`)
+- docs impact: none
+
+### T050
+
+- [x] T050 [P] [US6] Create `components/ContactSummaryCard.tsx` — pure display component (no client hooks)
+- objective: A plain TypeScript/JSX function component — no `"use client"`, no hooks, no
+  data fetching. Props: `contact: { name: string; email: string; phone: string | null }` and
+  `metrics: ContactMetrics` (import from `lib/contact-metrics.ts`).
+  Outer div: `data-testid="contact-summary-card"` and
+  `className="rounded-xl bg-white ring-1 ring-blue-100 shadow-sm p-4"`.
+  Layout: `md:flex md:gap-6`; mobile default: `flex flex-col gap-3`.
+  Identity block (left on desktop, first on mobile): name in `font-semibold text-slate-900`,
+  email in `text-sm text-slate-600`, phone in `text-sm text-slate-500` — omit the phone
+  element entirely when `contact.phone === null` (do not render a fallback dash for it).
+  Metrics block (right on desktop, second on mobile): outgoing count labeled "Sent",
+  incoming count labeled "Received", and dollar amounts for pending, paid, and declined
+  using `formatCents()` from `lib/money.ts`. Labels in `text-xs text-slate-500`,
+  values in `text-sm font-medium text-slate-900`.
+- files: `components/ContactSummaryCard.tsx`
+- validation: `npm run build` passes; no `"use client"` in the file; phone element
+  absent when phone is null; amounts formatted as "$X.XX" via `formatCents()`
+- evidence impact: AC26, AC27, AC28
+- recommended lane: implementation
+- reasoning / effort: pure display component; low risk; no state management
+- required review: confirm no `"use client"` directive; confirm phone line omitted
+  entirely (not shown as "—") when phone is null; confirm `data-testid="contact-summary-card"`
+  on the outer div; confirm `formatCents` used for all dollar amounts
+- docs impact: none
+
+---
+
+**Batch checkpoint**: After T050, run `npm run build`. Expect zero TypeScript errors.
+No dashboard changes yet — proceed to Batch C-2.
+
+---
+
+## Phase 17 — Dashboard Integration + UI Polish (AC26-AC32) — Batch C-2
+
+**Batch goal**: Wire the contact summary card into both dashboard server components and
+apply the surface wrapper + active pill style to FilterBar. After this batch: AC26-AC32
+are verifiable manually in the browser on both dashboards.
+
+### T051
+
+- [x] T051 [P] [US6] Update `app/(protected)/dashboard/outgoing/page.tsx` — single-contact detection, metrics fetch, ContactSummaryCard render, controls surface wrapper
+- objective: Four additions to the existing outgoing dashboard server component:
+  (1) Import `resolveMatchedContact`, `computeContactMetrics` from `lib/contact-metrics.ts`
+  and `ContactSummaryCard` from `components/ContactSummaryCard.tsx`.
+  (2) After computing `allDtos`, call `resolveMatchedContact(searchParam ?? "", allDtos, "outgoing")`.
+  If result is non-null and `searchParam` is non-empty, call
+  `const metrics = await computeContactMetrics(session.userId, matchedContact.id)`.
+  (3) Wrap `<FilterBar>`, `<Suspense><SearchInput /></Suspense>`, and (conditionally)
+  `<ContactSummaryCard>` in:
+  `<div data-testid="controls-surface" className="mb-6 rounded-xl bg-slate-50 ring-1 ring-slate-200 shadow-sm p-4 space-y-3">`.
+  (4) Move the empty-state paragraph inside the surface wrapper (render it after the controls
+  group, before the request list div). This keeps the surface visible even on empty states.
+  Render `<ContactSummaryCard contact={matchedContact} metrics={metrics} />` inside the
+  wrapper when `matchedContact` is non-null.
+- files: `app/(protected)/dashboard/outgoing/page.tsx`
+- validation: Search "bob" → contact card visible below search; card shows Bob's name, email,
+  phone; metrics labels visible; status filter change (click PENDING) does not remove the card;
+  empty search shows no card; search "zzznomatch" shows no card; `npm run build` passes
+- evidence impact: AC26, AC27, AC28, AC29, AC30, AC31, AC32
+- recommended lane: implementation
+- reasoning / effort: focused additions to existing server component; medium
+- required review: confirm `resolveMatchedContact` receives `allDtos` (the full pre-status-filter
+  set) so card persists across filter changes (AC30); confirm `computeContactMetrics` is only
+  called when `matchedContact !== null && searchParam`; confirm `data-testid="controls-surface"`
+  on the wrapper div; confirm empty-state paragraph is inside the surface wrapper
+- docs impact: none
+
+### T052
+
+- [x] T052 [P] [US6] Update `app/(protected)/dashboard/incoming/page.tsx` — same contact detection, metrics, card, and surface wrapper as T051 (direction: "incoming")
+- objective: Mirror T051 for the incoming dashboard. The only directional difference:
+  pass `"incoming"` as the direction argument to `resolveMatchedContact`. Everything else
+  is identical — same imports, same surface wrapper with `data-testid="controls-surface"`,
+  same conditional card render, same empty-state placement inside the wrapper.
+  Metrics perspective: `computeContactMetrics(session.userId, matchedContact.id)` — the
+  `outgoingCount`/`incomingCount` values in the returned metrics are always from the current
+  user's perspective, not the contact's perspective.
+- files: `app/(protected)/dashboard/incoming/page.tsx`
+- validation: Bob logs in, searches "alice" on incoming dashboard → contact card appears
+  with Alice's name, email, phone, and relationship metrics scoped to Bob↔Alice;
+  `npm run build` passes; surface wrapper present with correct `data-testid`
+- evidence impact: AC26-AC32 (incoming dashboard coverage)
+- recommended lane: implementation
+- reasoning / effort: direct mirror of T051; low risk after T051 is validated
+- required review: confirm direction argument is `"incoming"` in `resolveMatchedContact`;
+  confirm `data-testid="controls-surface"` present; confirm no existing behavior changed
+  (status filter, search filter, list order all unchanged)
+- docs impact: none
+
+### T053
+
+- [x] T053 [US6] Update `components/FilterBar.tsx` — brand-adjacent active pill style (blue-600 active, slate inactive)
+- objective: Update pill button className strings in FilterBar. Active pill (current status
+  matches the pill's status): `bg-blue-600 text-white shadow-sm rounded-full px-3 py-1 text-sm font-medium`.
+  Inactive pill: `bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100 rounded-full px-3 py-1 text-sm`.
+  The `router.push` logic, pill labels, and ALL/status branching are unchanged.
+  No other files modified in this task.
+- files: `components/FilterBar.tsx`
+- validation: Active pill renders with blue-600 background and white text; inactive pills
+  have white background with slate ring; `npm run build` passes; all 6 pills render;
+  `npx playwright test e2e/filter-search.spec.ts` still passes (pill functionality unchanged)
+- evidence impact: AC32
+- recommended lane: implementation
+- reasoning / effort: className string swap only; zero logic changes; minimal
+- required review: confirm `router.push` logic untouched; confirm ALL 6 pill labels still
+  render; confirm no Tailwind config changes needed (all standard utility classes)
+- docs impact: none
+
+---
+
+**Batch checkpoint**: After T051-T053, open both dashboards in browser. Search "bob" on
+outgoing — confirm surface wrapper visible, contact card present, blue active pill. Resize
+to 375px (dev tools) — confirm card stacks vertically without horizontal scroll.
+Run `npm run build`. Then run `npx playwright test e2e/filter-search.spec.ts` to confirm
+no regression on AC14-AC19.
+
+---
+
+## Phase 18 — E2E Tests for Contact Summary Card (AC26-AC32) — Batch C-3
+
+**Batch goal**: Full Playwright coverage for all 7 new ACs. After this batch: automated
+evidence is ready; proceed to production deployment and evidence collection.
+
+### T054
+
+- [ ] T054 [US6] Write E2E tests for contact summary card in `e2e/contact-summary-card.spec.ts` (AC26-AC32)
+- objective: Seven named test cases using the existing `loginAs` helper pattern (Alice logs
+  in as <alice@example.com> / demo1234):
+  **Test 1 — AC26+AC27+AC28** "Single match shows contact card with identity and metrics":
+  Alice searches "bob" on outgoing dashboard → `data-testid="contact-summary-card"` visible;
+  "Bob" text visible; "<bob@example.com>" text visible; "+15550002222" text visible; at least
+  one metric label ("Sent" or "Received") visible.
+  **Test 2 — AC29-a** "Zero match hides card": Alice searches "zzznomatch" → card locator
+  not visible.
+  **Test 3 — AC29-b** "Multi-match hides card": Alice searches "example.com" → card locator
+  not visible (all 3 seed users match "example.com").
+  **Test 4 — AC29-c** "Empty search hides card": Navigate to `/dashboard/outgoing` with no
+  search param → card locator not visible.
+  **Test 5 — AC30** "Status filter change does not remove card": Alice searches "bob" → card
+  visible; click "PENDING" pill; `expect(page).toHaveURL(/status=PENDING/)`; card still
+  visible (`data-testid="contact-summary-card"`).
+  **Test 6 — AC31** "Mobile 375px viewport — card visible without horizontal scroll":
+  `await page.setViewportSize({ width: 375, height: 812 })`; search "bob"; card visible;
+  `expect(await page.evaluate(() => document.documentElement.scrollWidth <= 375)).toBe(true)`.
+  **Test 7 — AC32** "Controls surface wrapper present": navigate to `/dashboard/outgoing`;
+  `page.locator('[data-testid="controls-surface"]')` is visible.
+- files: `e2e/contact-summary-card.spec.ts`
+- validation: `npx playwright test e2e/contact-summary-card.spec.ts` exits 0; all 7 tests
+  pass; video artifacts produced in `test-results/`
+- evidence impact: AC26-AC32 (primary E2E evidence)
+- recommended lane: implementation
+- reasoning / effort: standard Playwright patterns; main care is AC29-b search term matching
+  all 3 seed users and AC31 scrollWidth assertion; medium
+- required review: confirm AC29-b search term genuinely matches all 3 seed users (verify
+  "example.com" appears in alice, bob, carol emails); confirm AC30 uses `toBeVisible` for
+  card after pill click (not `toHaveCount`); confirm AC31 uses `document.documentElement.scrollWidth`
+  not `document.body.scrollWidth`; confirm `loginAs` helper imported from filter-search.spec.ts
+  pattern (not duplicated — extract to a shared helper file if needed)
+- docs impact: update `docs/VIDEO_EVIDENCE_GUIDE.md` with new artifact names after passing
+
+---
+
+**Batch checkpoint**: After T054, run `npx playwright test e2e/contact-summary-card.spec.ts`.
+All 7 tests must pass locally before proceeding to evidence collection.
+
+---
+
+## Phase 19 — Closeout + Evidence (AC26-AC32) — Batch C-4
+
+**Batch goal**: Phase validation, docs sync, production deployment, and full evidence
+collection for all 34 ACs (27 existing + 7 new).
+
+### T055
+
+- [ ] T055 Run `bash scripts/phase_closeout.sh`, update `docs/EXECUTION_LOG.md` and `docs/AI_PROCESS.md` for the contact summary card batch
+- objective: Phase closeout sequence:
+  (1) Run `bash scripts/phase_closeout.sh` — build + lint + type check must all pass.
+  (2) Append a new dated entry to `docs/EXECUTION_LOG.md` covering T049-T054:
+  what was done (contact metrics helper, card component, dashboard integration, UI polish,
+  E2E tests), why (spec AC26-AC32), artifacts changed, validation results.
+  (3) Update `docs/AI_PROCESS.md` to reflect any new AI usage patterns in Batch C
+  (spec-plan-tasks-implement workflow, speckit-plan addendum pattern).
+- files: `docs/EXECUTION_LOG.md`, `docs/AI_PROCESS.md`
+- validation: `bash scripts/phase_closeout.sh` exits 0 (5/5 checks green);
+  EXECUTION_LOG has a new entry with today's date covering the Batch C scope
+- evidence impact: reviewer-facing doc sync
+- recommended lane: implementation (low effort)
+- reasoning / effort: standard phase closeout; follows existing log format
+- required review: confirm EXECUTION_LOG entry covers T049-T054 scope; confirm
+  AI_PROCESS accurately reflects AI usage (not invented)
+- docs impact: `docs/EXECUTION_LOG.md`, `docs/AI_PROCESS.md`
+
+### T056
+
+- [ ] T056 Deploy to production, re-run full E2E evidence suite for all 34 ACs, update README and docs
+- objective: Final evidence collection:
+  (1) Merge or deploy `feat/contact-summary-card` to production on Vercel. Confirm
+  `https://lovie-afb-assignment.vercel.app` serves the new contact card UI.
+  (2) Confirm production DB seed is intact — Alice/Bob/Carol have phone numbers.
+  Re-seed if needed: `DATABASE_URL=<pooler_url> npx prisma db seed`.
+  (3) Run `BASE_URL=https://lovie-afb-assignment.vercel.app bash scripts/3-run_e2e_evidence.sh .`
+  All 34 E2E tests (27 existing + 7 new) must pass. Collect 34 `.webm` videos + 34
+  `.zip` traces in `artifacts/`.
+  (4) Update `README.md` evidence section to reflect "34/34 tests pass" and list the
+  new `contact-summary-AC26-AC32` artifact names.
+  (5) Update `docs/VIDEO_EVIDENCE_GUIDE.md` artifact list with the 5 new named videos
+  from `contact-summary-card.spec.ts`.
+- files: `artifacts/videos/` (5-7 new), `artifacts/traces/` (5-7 new), `README.md`,
+  `docs/VIDEO_EVIDENCE_GUIDE.md`
+- validation: All 34 tests pass against production; `artifacts/videos/` contains
+  `contact-summary-AC26-AC28-*.webm`, `contact-summary-AC29-*.webm`,
+  `contact-summary-AC30-*.webm`, `contact-summary-AC31-*.webm`,
+  `contact-summary-AC32-*.webm`; README evidence count updated
+- evidence impact: primary submission evidence for AC26-AC32
+- recommended lane: implementation
+- reasoning / effort: same deploy+seed+evidence pattern as T048; medium
+- required review: confirm production deployment is live before running E2E; confirm
+  all 34 tests pass (not just the 7 new ones); confirm README and guide both updated
+- docs impact: `README.md`, `docs/VIDEO_EVIDENCE_GUIDE.md`

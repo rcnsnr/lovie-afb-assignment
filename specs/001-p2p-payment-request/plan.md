@@ -349,3 +349,242 @@ filtering logic in a single place. Acceptable at demo scale.
 - No websockets or real-time updates
 - No invite-by-email for unregistered recipients
 - No pagination
+
+---
+
+## Addendum: Contact Summary Card + UI Polish (AC26–AC32)
+
+**Scope**: Additive-only changes to both dashboard pages, a new display component, and a
+shared helper. No new DB entities. No new API endpoints. No new Tailwind config.
+Existing patterns (server component pages, Prisma direct queries, toPaymentRequestDTO)
+are preserved throughout.
+
+### New Files
+
+```text
+lib/contact-metrics.ts          ← resolveMatchedContact() + computeContactMetrics()
+components/ContactSummaryCard.tsx ← pure display component (no client hooks)
+e2e/contact-summary-card.spec.ts  ← AC26–AC32 E2E tests
+```
+
+### Modified Files
+
+```text
+app/(protected)/dashboard/outgoing/page.tsx  ← detect single contact, fetch metrics, render card, UI polish
+app/(protected)/dashboard/incoming/page.tsx  ← same
+components/FilterBar.tsx                     ← update active pill visual style to slate/blue palette
+docs/VIDEO_EVIDENCE_GUIDE.md                 ← update artifact list for new AC tests
+README.md                                    ← update evidence section
+```
+
+### Single-Contact Detection Algorithm
+
+Detection runs against `allDtos` — the full set of DTOs for the current dashboard direction
+**before status filtering**. This satisfies AC30: the card must remain visible when the status
+filter changes (the status filter changes which requests appear in the list, not which contacts
+the user has a relationship with).
+
+```text
+1. If searchParam is empty → matchedContact = null, card hidden (AC29)
+2. Build a Map<contactId, contactIdentity> by iterating allDtos:
+   - Outgoing: key = dto.recipientId, value = { id, name, email, phone }
+   - Incoming: key = dto.requesterId, value = { id, name, email, phone }
+3. Apply F10 case-insensitive substring matching on name, email, phone for each entry
+   (same OR logic as the existing request-list search filter)
+4. If exactly 1 entry survives → single match → proceed to metrics (AC26)
+5. If 0 or 2+ entries survive → matchedContact = null, card hidden (AC29)
+```
+
+### Metrics Computation
+
+When a single contact is detected, one additional Prisma query fetches all requests between
+the current user and the matched contact in **both directions**:
+
+```typescript
+// lib/contact-metrics.ts
+const allBetween = await prisma.paymentRequest.findMany({
+  where: {
+    OR: [
+      { requesterId: userId, recipientId: contactId },
+      { requesterId: contactId, recipientId: userId },
+    ],
+  },
+  include: { requester: true, recipient: true },
+});
+const dtos = allBetween.map(toPaymentRequestDTO);
+
+return {
+  outgoingCount: dtos.filter((d) => d.requesterId === userId).length,
+  incomingCount: dtos.filter((d) => d.recipientId === userId).length,
+  pendingAmount: dtos
+    .filter((d) => d.status === "PENDING")
+    .reduce((s, d) => s + d.amountMinorUnits, 0),
+  paidAmount: dtos.filter((d) => d.status === "PAID").reduce((s, d) => s + d.amountMinorUnits, 0),
+  declinedAmount: dtos
+    .filter((d) => d.status === "DECLINED")
+    .reduce((s, d) => s + d.amountMinorUnits, 0),
+  // CANCELLED and EXPIRED excluded from dollar aggregates per spec F13 step 3
+};
+```
+
+This query runs only when a single contact is matched and `searchParam` is non-empty.
+On empty search or multi/no-match the extra query is skipped entirely — no perf cost.
+
+`toPaymentRequestDTO` applies `getEffectiveStatus` so PENDING-but-expired requests are
+counted as EXPIRED and excluded from `pendingAmount`. This matches the spec's intent that
+aggregates use effective status, not stored status.
+
+### ContactSummaryCard Component
+
+Pure display component. No `"use client"`, no hooks, no data fetching.
+
+```typescript
+// components/ContactSummaryCard.tsx
+type ContactInfo = { name: string; email: string; phone: string | null };
+type ContactMetrics = {
+  outgoingCount: number;
+  incomingCount: number;
+  pendingAmount: number;
+  paidAmount: number;
+  declinedAmount: number;
+};
+
+export function ContactSummaryCard({
+  contact,
+  metrics,
+}: {
+  contact: ContactInfo;
+  metrics: ContactMetrics;
+}) { ... }
+```
+
+**Layout**:
+
+- Outer: `rounded-xl bg-white ring-1 ring-blue-100 shadow-sm p-4`
+- Desktop split: `md:flex md:gap-6` — identity block on left, metrics block on right
+- Mobile: `flex flex-col gap-3` (stacked, identity first) — satisfies AC31 at 375px
+- Identity block: name (bold, slate-900), email (text-sm, slate-600), phone or `—` (text-sm, slate-500)
+- Metrics block: 3-column micro-grid (outgoing | incoming | pending/paid/declined), amounts
+  via `formatCents()` for consistency with the rest of the app
+
+**Phone display rule** (AC27): render phone only when `contact.phone !== null`. If null, omit
+the line entirely — do not show `—` for the line label. (The `—` fallback applies only to the
+value cell inside a metrics grid, not to an entire contact identity line.)
+
+### UI Polish Scope
+
+**Controls area wrapper** (both dashboard pages):
+
+Wrap the `<FilterBar>`, `<SearchInput>`, and `<ContactSummaryCard>` (when present) in a single
+container div. This satisfies AC32 for visual grouping and empty-state placement:
+
+```tsx
+<div className="mb-6 rounded-xl bg-slate-50 ring-1 ring-slate-200 shadow-sm p-4 space-y-3">
+  <FilterBar activeStatus={activeStatus} basePath="..." />
+  <Suspense fallback={null}>
+    <SearchInput basePath="..." />
+  </Suspense>
+  {matchedContact && <ContactSummaryCard contact={matchedContact} metrics={contactMetrics} />}
+</div>
+```
+
+The empty-state paragraph (no results / no requests yet) moves inside the same wrapper so the
+layout surface does not collapse on empty lists — satisfies AC32's empty-state clause.
+
+**FilterBar active pill** (AC32):
+Update active pill class from current (presumably gray/blue variant) to:
+
+- Active: `bg-blue-600 text-white shadow-sm`
+- Inactive: `bg-white text-slate-700 hover:bg-slate-100 ring-1 ring-slate-200`
+
+No Tailwind config change needed — all standard utility classes.
+
+**Empty state placement** (AC32): Move the conditional empty-state paragraph from below the
+controls wrapper to inside it, so the slate-50 surface visually contains both the controls
+and the empty state message. This prevents the background from abruptly ending when the list
+is empty.
+
+### Decision: No New API Endpoint
+
+Metrics are computed in the server component page directly via Prisma, consistent with how
+the existing dashboard data fetch works. A separate `/api/contacts` endpoint would add a
+round-trip and require client-side state management in what is currently a server component.
+The server-side approach is zero-overhead for the existing architecture and keeps all data
+access in one place per page.
+
+### Decision: Shared Helper Module (`lib/contact-metrics.ts`)
+
+Both outgoing and incoming dashboard pages share identical detection + metrics logic.
+Extracting to `lib/contact-metrics.ts` avoids a ~50-line duplication between two files.
+This is the minimum justified extraction — not a broader utility library.
+
+The module exports exactly two functions:
+
+- `resolveMatchedContact(search, dtos, direction: "outgoing" | "incoming")` → contact identity or null
+- `computeContactMetrics(userId, contactId)` → metric counts and amounts (uses Prisma internally)
+
+### E2E Test Plan (AC26–AC32)
+
+File: `e2e/contact-summary-card.spec.ts`
+
+| Test                               | ACs covered      | Key assertion                                                                    |
+| ---------------------------------- | ---------------- | -------------------------------------------------------------------------------- |
+| Single match shows card            | AC26, AC27, AC28 | Card visible below search; name/email/phone present; metric labels visible       |
+| Zero match hides card              | AC29             | Search "zzznomatch" → card not present                                           |
+| Multi-match hides card             | AC29             | Search "example.com" → card not present (all 3 users match)                      |
+| Empty search hides card            | AC29             | Navigate to `/dashboard/outgoing` without search → card not present              |
+| Status filter does not remove card | AC30             | Click PENDING pill → card still visible; `getByRole` for metrics still passes    |
+| Mobile 375px viewport              | AC31             | Set `viewport: { width: 375, height: 812 }` → card visible, no horizontal scroll |
+| Controls area surface visible      | AC32             | `page.locator('[data-testid="controls-surface"]')` → toBeVisible                 |
+
+Each test logs in as Alice and uses Bob as the counterparty (seeded with known phone/email).
+
+**`data-testid` anchors required** (to keep E2E assertions robust):
+
+- `data-testid="controls-surface"` on the wrapper div
+- `data-testid="contact-summary-card"` on the card outer div
+
+### Updated Evidence Artifact List
+
+After T056 evidence re-run, `docs/VIDEO_EVIDENCE_GUIDE.md` artifact list grows to ~34 named
+videos (27 existing + 7 new from contact-summary-card.spec.ts) plus matching traces.
+
+New artifact names (pattern):
+
+- `contact-summary-AC26-AC28-*.webm`
+- `contact-summary-AC29-*.webm`
+- `contact-summary-AC30-*.webm`
+- `contact-summary-AC31-*.webm`
+- `contact-summary-AC32-*.webm`
+
+### New Tasks (T049–T056)
+
+| ID   | Description                                                           | Files                                                     |
+| ---- | --------------------------------------------------------------------- | --------------------------------------------------------- |
+| T049 | Create `lib/contact-metrics.ts`                                       | `lib/contact-metrics.ts`                                  |
+| T050 | Create `components/ContactSummaryCard.tsx`                            | `components/ContactSummaryCard.tsx`                       |
+| T051 | Update outgoing dashboard: detect contact, fetch metrics, render card | `app/(protected)/dashboard/outgoing/page.tsx`             |
+| T052 | Update incoming dashboard: detect contact, fetch metrics, render card | `app/(protected)/dashboard/incoming/page.tsx`             |
+| T053 | UI polish: surface wrapper, active pill style, empty-state placement  | Both dashboard pages, `components/FilterBar.tsx`          |
+| T054 | Write E2E tests for AC26–AC32                                         | `e2e/contact-summary-card.spec.ts`                        |
+| T055 | Run `phase_closeout.sh`, update docs (EXECUTION_LOG, AI_PROCESS)      | `docs/EXECUTION_LOG.md`, `docs/AI_PROCESS.md`             |
+| T056 | Re-run full production E2E evidence suite, update README + guide      | `artifacts/`, `README.md`, `docs/VIDEO_EVIDENCE_GUIDE.md` |
+
+**Batch grouping** (matches the user's preference for stop-after-each-batch):
+
+- Batch C-1: T049 + T050 (new files only, no page changes)
+- Batch C-2: T051 + T052 + T053 (all page/component changes)
+- Batch C-3: T054 (E2E tests; validate before evidence)
+- Batch C-4: T055 + T056 (closeout + evidence)
+
+### Constitution Check
+
+No violations introduced:
+
+- **Money safety**: `formatCents()` used for all metric dollar display. No new float arithmetic.
+- **Auth**: metrics query scoped to `session.userId`. No cross-user data leakage.
+- **Lifecycle**: `toPaymentRequestDTO` (which calls `getEffectiveStatus`) applied to metrics
+  fetch — effective status drives aggregate computation, not stored status.
+- **No new entities**: data-model.md unchanged.
+- **No new API routes**: existing route table unchanged.
+- **Non-goals preserved**: no redesign, no new design system, no modal. Polish is additive-only.
