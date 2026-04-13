@@ -908,7 +908,7 @@ the existing 13. Video and trace artifacts collected for all.
 
 ### T046
 
-- [ ] T046 [US2] [US3] Write E2E tests for filter and search in `e2e/filter-search.spec.ts` (AC14-AC19)
+- [x] T046 [US2] [US3] Write E2E tests for filter and search in `e2e/filter-search.spec.ts` (AC14-AC19)
 - objective: Six test cases:
   (AC14) Both outgoing and incoming dashboards show 6 pill buttons (ALL, PENDING, PAID,
   DECLINED, CANCELLED, EXPIRED).
