@@ -19,6 +19,55 @@ Use it to capture:
 
 ---
 
+### 2026-04-13 — Batch D: search filter — API params, dashboard wiring, SearchInput (T040-T042)
+
+#### What was done
+
+- T040: Created `components/SearchInput.tsx` — `"use client"` debounced input; 300ms
+  `useRef` timer; merges `?search=` into existing `URLSearchParams` (preserves `?status=`);
+  `router.replace` avoids history spam; clears `search` param on empty input; cleanup on
+  unmount
+- T041: Updated `GET /api/requests` and `GET /api/requests/incoming` — both accept
+  `?search=` param; filtering runs AFTER `toPaymentRequestDTO()` and AFTER status filter;
+  case-insensitive substring match on counterparty name, email, phone; null phone guarded
+  with `?? ""` to prevent `.toLowerCase()` crash; empty/missing search bypasses filter
+- T042: Updated both dashboard server component pages — accept `searchParams.search` from
+  Next.js App Router; same post-DTO search logic applied server-side; render `<SearchInput>`
+  wrapped in `<Suspense fallback={null}>` (required for `useSearchParams` in App Router);
+  combined `?status=PAID&search=bob` works correctly; contextual empty-state messages for
+  search vs filter vs no-records
+
+#### Why it was done
+
+- T040-T042 complete the search slice of the gap-fix batch; search was the remaining
+  user-facing feature listed in the assignment spec that was not yet wired
+- URL-driven approach keeps both filter and search stateless and shareable
+- Post-DTO filtering is correct because EXPIRED status is computed in `toPaymentRequestDTO`,
+  not stored in the DB — a DB-level search would miss implicitly-expired rows
+
+#### Artifacts changed
+
+- `components/SearchInput.tsx` (new)
+- `app/api/requests/route.ts` (search filter added)
+- `app/api/requests/incoming/route.ts` (search filter added)
+- `app/(protected)/dashboard/outgoing/page.tsx` (SearchInput + server-side search)
+- `app/(protected)/dashboard/incoming/page.tsx` (SearchInput + server-side search)
+
+#### Validation
+
+- `npm run build` — 0 TypeScript errors, 0 lint warnings
+- `bash scripts/phase_closeout.sh` — 5/5 green (markdownlint, prettier, eslint, tsc, prisma validate)
+- Committed: `feat(T041-T042): wire search filter through API and both dashboards`
+- Pushed: `feat/phone-filter-search-pay-simulation`
+
+#### Notes
+
+- Suspense boundary required because `SearchInput` uses `useSearchParams()` (Next.js 14
+  App Router enforces this for client hooks used inside server components)
+- Search empty-state message shows the raw query string for reviewer clarity
+
+---
+
 ### 2026-04-13 — Batch C: status filter — component, API params, dashboard wiring (T037-T039)
 
 #### What was done
