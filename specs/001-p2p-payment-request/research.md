@@ -64,3 +64,37 @@ and implementation-defaults.md. This file documents decisions and alternatives c
 - **Decision**: Request UUID is the shareable link path segment: `/requests/[id]`
 - **Rationale**: UUID v4 is unguessable by default, requires no separate token generation.
   The request ID serves as both the DB key and the link identifier.
+
+## Decision: Phone Recipient Lookup
+
+- **Decision**: Exact match on `User.phone` field via `prisma.user.findUnique({ where: { phone } })`.
+  No normalization library; phone stored as entered (E.164-like format enforced by Zod).
+- **Rationale**: Demo-scale simplicity. Seeded users have consistent E.164 format.
+- **Alternatives considered**: libphonenumber-js normalization — adds dependency with no
+  reviewer-visible benefit at demo scale.
+
+## Decision: Dashboard Filter/Search Architecture
+
+- **Decision**: Server component pages read `searchParams` from Next.js App Router props.
+  Fetch all records, map to DTOs (applying `getEffectiveStatus`), then filter in application
+  code. Client components (`FilterBar`, `SearchInput`) update URL params via
+  `router.push/replace` triggering soft navigation.
+- **Rationale**: EXPIRED filter must happen post-`getEffectiveStatus()` — a DB-level WHERE
+  would miss implicitly expired PENDING rows. Application-level filter is correct and
+  sufficient at demo scale.
+- **Alternatives considered**: Full client component dashboards — more complex; server
+  component hybrid is simpler and preserves the existing data-fetching pattern.
+
+## Decision: Pay Simulation Delay Placement
+
+- **Decision**: `await new Promise(r => setTimeout(r, 2000 + Math.random() * 1000))`
+  placed AFTER authorization checks and BEFORE the conditional `updateMany` write.
+- **Rationale**: Delay only runs on authorized attempts. Conditional write still catches
+  concurrent mutations and expiration races that occur during the delay window.
+
+## Decision: Success Banner Dismiss
+
+- **Decision**: Auto-dismiss after 5 seconds via `useEffect` + `setTimeout`. X button for
+  manual dismiss. Separate `paySuccess` boolean state from `loading`.
+- **Rationale**: 5 seconds is enough to read confirmation, aligns with E2E assertion
+  windows, and doesn't permanently clutter the UI.

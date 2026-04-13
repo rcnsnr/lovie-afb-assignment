@@ -52,7 +52,10 @@ Return the currently authenticated user.
 
 Create a new payment request. Requires auth.
 
-**Request body**:
+Exactly one of `recipientEmail` or `recipientPhone` must be provided. Both or neither
+is a validation error.
+
+**Request body (email path)**:
 
 ```json
 {
@@ -62,9 +65,22 @@ Create a new payment request. Requires auth.
 }
 ```
 
+**Request body (phone path)**:
+
+```json
+{
+  "recipientPhone": "+15550002222",
+  "amountDollars": "15.00",
+  "note": "Dinner split"
+}
+```
+
 **Validation**:
 
 - `recipientEmail`: valid email, must exist in DB, must not equal session user's email
+- `recipientPhone`: E.164-like format (`/^\+?[1-9]\d{6,14}$/`), must exist in DB
+  as a user's phone, must not resolve to the session user's account
+- Exactly one of `recipientEmail` or `recipientPhone` must be present
 - `amountDollars`: string matching `/^\d+(\.\d{1,2})?$/`, converted value > 0
 - `note`: optional string, max 200 characters
 
@@ -72,13 +88,21 @@ Create a new payment request. Requires auth.
 
 - `201 Created` — `{ "request": PaymentRequestDTO }`
 - `400 Bad Request` — validation failure with field-level errors
-- `404 Not Found` — recipient email not registered
+- `404 Not Found` — recipient email or phone not registered
 - `422 Unprocessable` — self-request (requester = recipient)
 - `401 Unauthorized` — no valid session
 
 ### GET /api/requests
 
 List outgoing requests for the authenticated user. Sorted by createdAt DESC.
+
+**Query params**:
+
+- `?status=` — optional. One of `ALL`, `PENDING`, `PAID`, `DECLINED`, `CANCELLED`,
+  `EXPIRED`. Invalid value defaults to `ALL`. Filtering is applied after
+  `getEffectiveStatus()` computation so EXPIRED catches implicit expiration.
+- `?search=` — optional. Case-insensitive substring match against recipient name,
+  email, or phone. Empty string ignored.
 
 **Responses**:
 
@@ -88,6 +112,11 @@ List outgoing requests for the authenticated user. Sorted by createdAt DESC.
 ### GET /api/requests/incoming
 
 List incoming requests for the authenticated user. Sorted by createdAt DESC.
+
+**Query params**:
+
+- `?status=` — same as above; filtering applied against effective status.
+- `?search=` — case-insensitive substring match against requester name, email, or phone.
 
 **Responses**:
 
@@ -107,7 +136,9 @@ computation (PENDING + expired → EXPIRED).
 
 ### POST /api/requests/[id]/pay
 
-Transition a PENDING request to PAID. Recipient only.
+Transition a PENDING request to PAID. Recipient only. The server introduces a 2-3 second
+artificial delay before committing the transition to simulate payment rail latency. The
+client must handle this latency gracefully (disabled button + spinner).
 
 **Responses**:
 
@@ -152,8 +183,10 @@ Transition a PENDING request to CANCELLED. Requester only.
   recipientId: string;
   requesterEmail: string;
   requesterName: string;
+  requesterPhone: string | null; // null if user has no phone
   recipientEmail: string;
   recipientName: string;
+  recipientPhone: string | null; // null if user has no phone
   amountDisplay: string; // "$15.00" — formatted cents
   amountMinorUnits: number; // 1500 — raw storage value
   note: string | null;

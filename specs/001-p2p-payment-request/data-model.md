@@ -6,13 +6,15 @@
 
 Represents an authenticated demo user.
 
-| Field     | Type     | Notes                                |
-| --------- | -------- | ------------------------------------ |
-| id        | String   | UUID v4, primary key                 |
-| email     | String   | Unique, used as login identifier     |
-| password  | String   | Demo hash (bcryptjs, cost factor 10) |
-| name      | String   | Display name                         |
-| createdAt | DateTime | Auto-set on create                   |
+| Field     | Type     | Notes                                               |
+| --------- | -------- | --------------------------------------------------- |
+| id        | String   | UUID v4, primary key                                |
+| email     | String   | Unique, used as login identifier                    |
+| password  | String   | Demo hash (bcryptjs, cost factor 10)                |
+| name      | String   | Display name                                        |
+| phone     | String?  | Optional, unique. E.164-like (e.g. "+15551234567"). |
+|           |          | Used as alternative recipient identifier. Nullable. |
+| createdAt | DateTime | Auto-set on create                                  |
 
 Relationships:
 
@@ -90,6 +92,7 @@ model User {
   email     String   @unique
   password  String
   name      String
+  phone     String?  @unique
   createdAt DateTime @default(now())
 
   sentRequests     PaymentRequest[] @relation("Requester")
@@ -132,11 +135,12 @@ enum RequestStatus {
 
 ## Seed Users (demo)
 
-| Name  | Email               | Password | Role in demo           |
-| ----- | ------------------- | -------- | ---------------------- |
-| Alice | <alice@example.com> | demo1234 | Default requester      |
-| Bob   | <bob@example.com>   | demo1234 | Default recipient      |
-| Carol | <carol@example.com> | demo1234 | Observer / third party |
+| Name  | Email               | Phone        | Password | Role in demo           |
+| ----- | ------------------- | ------------ | -------- | ---------------------- |
+| Alice | <alice@example.com> | +15550001111 | demo1234 | Default requester      |
+| Bob   | <bob@example.com>   | +15550002222 | demo1234 | Default recipient      |
+| Carol | <carol@example.com> | +15550003333 | demo1234 | Observer / third party |
 
 All seeded with the same demo password for simplicity. E2E tests switch between Alice
-and Bob as requester/recipient for the core happy paths.
+and Bob as requester/recipient for the core happy paths. Phone numbers are populated on
+all three users so phone-lookup E2E tests can use Bob's number as the recipient.

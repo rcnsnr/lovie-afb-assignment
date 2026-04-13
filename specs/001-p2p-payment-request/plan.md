@@ -3,10 +3,14 @@
 ## Summary
 
 A P2P payment request web feature built as a Next.js modular monolith. Users create
-payment requests by email, amount (dollar input), and optional note. Recipients can pay
-or decline. Requesters can cancel. All requests expire after 7 days. Mock auth (email +
-demo password) with server-side authorization enforcement. No real money movement.
+payment requests by email or phone, amount (dollar input), and optional note. Recipients
+can pay or decline. Requesters can cancel. All requests expire after 7 days. Mock auth
+(email + demo password) with server-side authorization enforcement. No real money movement.
 Deployed to Vercel with Supabase Postgres.
+
+Both dashboards support status filtering (pill/tab buttons) and debounced counterparty
+search (name, email, phone). The Pay action introduces a 2-3 second server-side delay
+with a processing state and auto-dismissing success banner.
 
 ## Chosen Stack
 
@@ -40,39 +44,44 @@ app/
   (protected)/
     layout.tsx               ← auth guard: redirect to /login if no session
     dashboard/
-      outgoing/page.tsx      ← list of requests sent by current user
-      incoming/page.tsx      ← list of requests received by current user
+      outgoing/page.tsx      ← list of requests sent; reads ?status= + ?search=
+      incoming/page.tsx      ← list of requests received; reads ?status= + ?search=
     requests/
-      new/page.tsx           ← create request form
-      [id]/page.tsx          ← request detail + action buttons
+      new/page.tsx           ← create request form (email/phone toggle)
+      [id]/page.tsx          ← request detail + action buttons + pay success banner
   api/
     auth/
       login/route.ts
       logout/route.ts
       me/route.ts
     requests/
-      route.ts               ← POST (create), GET (outgoing list)
-      incoming/route.ts      ← GET (incoming list)
+      route.ts               ← POST (create, email or phone), GET (outgoing list + filter/search)
+      incoming/route.ts      ← GET (incoming list + filter/search)
       [id]/
         route.ts             ← GET (detail)
-        pay/route.ts
+        pay/route.ts         ← 2-3s delay before commit
         decline/route.ts
         cancel/route.ts
+components/
+  ExpiryCountdown.tsx        ← existing
+  FilterBar.tsx              ← NEW: pill/tab status filter (client component)
+  SearchInput.tsx            ← NEW: debounced search input (client component)
 lib/
   auth.ts                    ← iron-session config, getSession helper
   money.ts                   ← parseDollars(), formatCents()
   prisma.ts                  ← singleton Prisma client
   requests.ts                ← getEffectiveStatus(), shared query helpers
+  dto.ts                     ← toPaymentRequestDTO (adds phone fields)
 prisma/
-  schema.prisma
-  seed.ts                    ← seeds Alice, Bob, Carol + demo requests
+  schema.prisma              ← add phone field to User
+  seed.ts                    ← seeds Alice, Bob, Carol (with phone numbers) + demo requests
 ```
 
 ## Data Model Plan
 
 See `data-model.md` for full schema. Summary:
 
-- **User**: id (UUID), email (unique), password (bcrypt), name, createdAt
+- **User**: id (UUID), email (unique), password (bcrypt), name, **phone (String? unique)**, createdAt
 - **PaymentRequest**: id (UUID), requesterId, recipientId, amountMinorUnits (Int),
   note (String?), status (enum), expiresAt, createdAt, updatedAt, paidAt?,
   declinedAt?, cancelledAt?
@@ -80,6 +89,11 @@ See `data-model.md` for full schema. Summary:
 
 EXPIRED is computed on read (`status === PENDING && expiresAt < now()`), not stored
 on passive reads. State-changing actions also re-check before executing.
+
+**`phone` field addition** (new): nullable, unique String on User. Migration adds
+`ALTER TABLE "User" ADD COLUMN "phone" TEXT UNIQUE`. Seed script populates Alice
+(+15550001111), Bob (+15550002222), Carol (+15550003333). No normalization: stored
+exactly as entered. Lookup is exact match (not substring) on the `phone` field.
 
 ## Route / API Shape
 
@@ -89,18 +103,31 @@ Note (IG4): the outgoing and incoming list endpoints apply `getEffectiveStatus()
 every item in the result set before returning. EXPIRED items are included in the list
 (not filtered), so users see their full request history. No client-side status filtering.
 
-| Method | Path                       | Auth | Purpose                  |
-| ------ | -------------------------- | ---- | ------------------------ |
-| POST   | /api/auth/login            | —    | Set session cookie       |
-| POST   | /api/auth/logout           | —    | Clear session cookie     |
-| GET    | /api/auth/me               | ✓    | Current user             |
-| POST   | /api/requests              | ✓    | Create request           |
-| GET    | /api/requests              | ✓    | Outgoing list            |
-| GET    | /api/requests/incoming     | ✓    | Incoming list            |
-| GET    | /api/requests/[id]         | ✓    | Request detail           |
-| POST   | /api/requests/[id]/pay     | ✓    | Pay (recipient only)     |
-| POST   | /api/requests/[id]/decline | ✓    | Decline (recipient only) |
-| POST   | /api/requests/[id]/cancel  | ✓    | Cancel (requester only)  |
+| Method | Path                                   | Auth | Purpose                          |
+| ------ | -------------------------------------- | ---- | -------------------------------- |
+| POST   | /api/auth/login                        | —    | Set session cookie               |
+| POST   | /api/auth/logout                       | —    | Clear session cookie             |
+| GET    | /api/auth/me                           | ✓    | Current user                     |
+| POST   | /api/requests                          | ✓    | Create request (email or phone)  |
+| GET    | /api/requests?status=&search=          | ✓    | Outgoing list with filter/search |
+| GET    | /api/requests/incoming?status=&search= | ✓    | Incoming list with filter/search |
+| GET    | /api/requests/[id]                     | ✓    | Request detail                   |
+| POST   | /api/requests/[id]/pay                 | ✓    | Pay (recipient only, 2-3s delay) |
+| POST   | /api/requests/[id]/decline             | ✓    | Decline (recipient only)         |
+| POST   | /api/requests/[id]/cancel              | ✓    | Cancel (requester only)          |
+
+**Filter/search implementation**: The list endpoints accept `?status=` and `?search=`
+query params. Filtering logic:
+
+1. Fetch all records for the user from DB (with requester + recipient relations)
+2. Map each through `getEffectiveStatus()` via `toPaymentRequestDTO`
+3. Filter by effective status if `status != ALL`
+4. Filter by search term with case-insensitive substring match on counterparty
+   name, email, and phone (all three fields, OR semantics)
+5. Return filtered result (reverse-chronological order preserved from DB sort)
+
+This approach avoids the EXPIRED filter problem (cannot push to DB level) and keeps
+filtering logic in a single place. Acceptable at demo scale.
 
 ## Auth Approach
 
@@ -135,6 +162,85 @@ every item in the result set before returning. EXPIRED items are included in the
 - **Consistency rule**: `formatCents` is the single source of truth for display; used on
   create screen (confirmation), detail screen, and both dashboards without exception
 - **No floats**: no `parseFloat`, no `toFixed` for storage, no division in business logic
+
+## Phone Recipient Path
+
+- **Create form** (`app/(protected)/requests/new/page.tsx`): add `identificationMethod`
+  state (`'email' | 'phone'`). Toggle is a pair of buttons that switch between the two
+  inputs. Only the active input is rendered. Switching clears the hidden field's state.
+- **API body**: When phone is selected, submit `{ recipientPhone, amountDollars, note }`.
+  When email is selected, submit `{ recipientEmail, amountDollars, note }` (unchanged).
+- **POST /api/requests** (`app/api/requests/route.ts`): Update Zod schema to accept
+  either `recipientEmail` or `recipientPhone` (exactly one, via `.refine()`). When
+  phone path: look up `prisma.user.findUnique({ where: { phone } })`. Same 404/422
+  response pattern as email path.
+- **Self-request check**: use `recipient.id !== session.userId` (UUID comparison) for
+  both email and phone paths — same guard already in place.
+- **DTO update** (`lib/dto.ts`): add `requesterPhone: string | null` and
+  `recipientPhone: string | null` sourced from `req.requester.phone` and
+  `req.recipient.phone`.
+
+## Dashboard Filter and Search
+
+- **Architecture**: Dashboard pages remain Next.js server components. They receive
+  `searchParams` props (`{ status?: string; search?: string }`) from Next.js App Router.
+  Two new client components handle user interaction:
+  - `components/FilterBar.tsx` — renders pill/tab buttons, calls
+    `router.push/replace` to update `?status=` URL param (soft navigation)
+  - `components/SearchInput.tsx` — renders text input, debounces 300ms with
+    `useCallback` + `setTimeout`/`clearTimeout` pattern, calls
+    `router.replace` to update `?search=` param
+- **Server component pages** read `searchParams.status` and `searchParams.search`,
+  fetch all records, pass DTOs through the filter/search logic, then render
+  `<FilterBar>` + `<SearchInput>` + filtered list.
+- **Filter logic** (in each dashboard page or a shared helper):
+
+  ```typescript
+  const filtered = dtos
+    .filter((r) => (status === "ALL" || !status ? true : r.status === status))
+    .filter((r) =>
+      !search
+        ? true
+        : [counterparty.name, counterparty.email, counterparty.phone].some((v) =>
+            v?.toLowerCase().includes(search.toLowerCase())
+          )
+    );
+  ```
+
+- **Empty state**: When `filtered.length === 0` and a filter/search is active, show
+  "No requests match this filter." instead of the default "No requests yet." state.
+- **URL param updates**: `FilterBar` uses `router.push` (adds history entry per F9 step 4);
+  `SearchInput` uses `router.replace` (no history spam on every keystroke).
+
+## Pay Simulation Delay
+
+- **Location**: `app/api/requests/[id]/pay/route.ts`
+- **Implementation**: Add `await new Promise(r => setTimeout(r, 2000 + Math.random() * 1000))`
+  **before** the conditional Prisma write (after the authorization checks). This gives
+  2000-3000ms delay. The random component makes it feel natural.
+- **Placement note**: delay goes AFTER the 403 actor check and BEFORE the `updateMany`.
+  This avoids wasting the delay on unauthorized attempts and preserves the concurrent-write
+  safety of the conditional update.
+
+## Pay Success Confirmation (Client)
+
+- **Location**: `app/(protected)/requests/[id]/page.tsx`
+- **New state**: `const [paySuccess, setPaySuccess] = useState(false)`
+- **On pay success**: inside `handleAction('pay')` success branch, set `setPaySuccess(true)`.
+  Keep existing `setReq(data.request)`.
+- **Auto-dismiss**: `useEffect(() => { if (paySuccess) { const t = setTimeout(() => setPaySuccess(false), 5000); return () => clearTimeout(t); } }, [paySuccess])`
+- **Banner render**: when `paySuccess` is true, render a green banner above the action area:
+
+  ```tsx
+  <div className="...green banner styles...">
+    Payment successful!
+    <button onClick={() => setPaySuccess(false)}>✕</button>
+  </div>
+  ```
+
+- **Processing state**: The existing `loading` flag already sets button text to
+  "Processing…" and `disabled`. Add a visual spinner inline (SVG or Tailwind `animate-spin`
+  on a border element) next to the button text during Pay specifically (not Decline/Cancel).
 
 ## Lifecycle Integrity Decisions
 

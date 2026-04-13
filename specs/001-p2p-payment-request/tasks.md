@@ -559,3 +559,420 @@ are collected for reviewer evidence.
 - collect video artifacts (`.webm`) in `e2e-evidence/`
 - collect Playwright trace artifacts (`.zip`) in `e2e-evidence/`
 - run `/ship-check` before final submission
+
+---
+
+## Phase 10 — Phone Field Foundation (AC20-AC23 prerequisite)
+
+**Batch goal**: Add `phone` to the User model and DTO. No UI changes yet. Safe to
+validate and stop here — existing tests must remain green. No downstream breakage risk.
+
+### T032
+
+- [ ] T032 Add `phone String? @unique` to User model in `prisma/schema.prisma` and generate a new migration named `add_user_phone`
+- objective: Extend the User model with an optional unique phone field. Create a Prisma
+  migration that adds the column without touching existing rows.
+- files: `prisma/schema.prisma`, `prisma/migrations/` (new migration directory)
+- validation: `npx prisma migrate dev --name add_user_phone` succeeds; `npx prisma generate`
+  produces updated client with `phone?: string | null` on User type; existing rows have
+  `phone = NULL` (no data loss)
+- evidence impact: prerequisite for AC20-AC23
+- recommended lane: implementation
+- reasoning / effort: schema-only change; no application logic; very low risk
+- required review: confirm `@unique` and nullable (`String?`) are both on the field;
+  confirm migration file adds `ALTER TABLE "User" ADD COLUMN "phone" TEXT`
+- docs impact: update `specs/001-p2p-payment-request/data-model.md` Prisma schema block
+  (already done in plan pass)
+
+### T033
+
+- [ ] T033 Update `prisma/seed.ts` to set phone numbers on Alice, Bob, and Carol (+15550001111, +15550002222, +15550003333)
+- objective: Give all three seeded demo users phone numbers so phone-lookup E2E tests
+  have stable, known values.
+- files: `prisma/seed.ts`
+- validation: `npx prisma db seed` (or `DATABASE_URL=<direct> npx prisma db seed`) succeeds;
+  `SELECT phone FROM "User"` returns three non-null rows; re-running seed is idempotent
+  (upsert, not insert)
+- evidence impact: required for AC21, AC22, AC23 E2E tests
+- recommended lane: implementation
+- reasoning / effort: data-only change; the seed already uses upsert; minimal risk
+- required review: confirm seed uses `upsert` not `create` so re-runs don't fail on unique
+  constraint; confirm phone values match spec (+15550001111 / +15550002222 / +15550003333)
+- docs impact: update `specs/001-p2p-payment-request/data-model.md` Seed Users table (done)
+
+### T034
+
+- [ ] T034 Add `requesterPhone: string | null` and `recipientPhone: string | null` to `PaymentRequestDTO` in `lib/dto.ts`
+- objective: Expose requester and recipient phone numbers in the DTO so dashboards can
+  include phone in search matching. No API or UI changes yet.
+- files: `lib/dto.ts`
+- validation: `npm run build` passes without TypeScript errors; `GET /api/requests/[id]`
+  response includes `recipientPhone` and `requesterPhone` fields (null for users without
+  phone, phone string for seeded users)
+- evidence impact: prerequisite for US3 phone search
+- recommended lane: implementation
+- reasoning / effort: three-line change to interface + mapping function; very low risk
+- required review: confirm both fields are sourced from `req.requester.phone ?? null` and
+  `req.recipient.phone ?? null` (not hardcoded or computed); confirm TypeScript builds clean
+- docs impact: none (contracts/api.md DTO section already updated)
+
+---
+
+**Batch checkpoint**: After T034, run `npm run build` and `npx playwright test e2e/smoke.spec.ts`.
+All 15 existing E2E tests must remain green before continuing to T035.
+
+---
+
+## Phase 11 — Phone Recipient API and Form (AC20-AC23)
+
+**Batch goal**: Accept `recipientPhone` on the create endpoint and wire up the
+Email/Phone toggle in the form. After this batch: AC20-AC23 are implementable
+in E2E (T045 in Phase 15).
+
+### T035
+
+- [ ] T035 [US1] Update `POST /api/requests` in `app/api/requests/route.ts` to accept `recipientPhone` as an alternative to `recipientEmail`
+- objective: Extend the create-request Zod schema and handler to accept exactly one of
+  `recipientEmail` or `recipientPhone`. Phone path: validate format with
+  `/^\+?[1-9]\d{6,14}$/`, look up user by exact phone match, apply same 404/422 guards
+  as email path.
+- files: `app/api/requests/route.ts`
+- validation: `POST /api/requests` with `{ recipientPhone: "+15550002222", amountDollars: "10.00" }`
+  creates a PENDING request for Bob; invalid format returns 400; unregistered phone returns
+  404; own phone returns 422; both fields provided returns 400; neither provided returns 400
+- evidence impact: AC21, AC22, AC23
+- recommended lane: implementation
+- reasoning / effort: Zod refine + one DB lookup path; medium; no data model changes needed
+- required review: confirm self-request check uses `recipient.id !== session.userId` (UUID,
+  not string comparison); confirm both fields in body at once is rejected; confirm
+  `include: { requester: true, recipient: true }` on the final findUnique for DTO mapping
+- docs impact: none (contracts/api.md already updated)
+
+### T036
+
+- [ ] T036 [US1] Add Email/Phone toggle to the create request form in `app/(protected)/requests/new/page.tsx`
+- objective: Add `identificationMethod` state (`'email' | 'phone'`). Render two toggle
+  buttons; show only the active input. Phone input is plain text with placeholder
+  "+15551234567". Switching toggle clears the hidden field's state. Submit sends
+  `recipientPhone` or `recipientEmail` based on active mode.
+- files: `app/(protected)/requests/new/page.tsx`
+- validation: Toggle switches visible input; hidden field is cleared on toggle; submitting
+  with phone sends `recipientPhone` in body; server returns created request; "recipient not
+  found" error renders for unregistered phone; self-request error renders for own phone
+- evidence impact: AC20
+- recommended lane: implementation
+- reasoning / effort: state + conditional render; medium; no new dependencies
+- required review: confirm switching Email → Phone clears `recipientEmail` state (and vice
+  versa); confirm phone field has `type="text"` and `inputMode="tel"` (not `type="tel"` to
+  avoid browser masking); confirm placeholder is "+15551234567"
+- docs impact: none
+
+---
+
+**Batch checkpoint**: After T036, manually test create form with phone in dev. Verify
+existing email path still works. Optionally run `npx playwright test e2e/happy-path.spec.ts`
+to confirm AC1/AC2 regression-free before continuing.
+
+---
+
+## Phase 12 — Dashboard Status Filter (AC14-AC16)
+
+**Batch goal**: Pill/tab status filter on both dashboards, URL-driven, soft-navigation.
+After this batch: AC14, AC15, AC16 verifiable manually and in E2E.
+
+### T037
+
+- [ ] T037 [US2] Create `components/FilterBar.tsx` — horizontal pill buttons for status filter
+- objective: Client component that renders 6 pill buttons (ALL, PENDING, PAID, DECLINED,
+  CANCELLED, EXPIRED). The active pill is visually highlighted. Clicking a pill calls
+  `router.push` to update `?status=` in the URL (removes param for ALL). Reads current
+  active status from a prop passed by the parent page.
+- files: `components/FilterBar.tsx`
+- validation: Component renders 6 pills; clicking PENDING adds `?status=PENDING` to URL;
+  clicking ALL removes the `?status=` param; active pill has distinct visual style
+  (e.g. filled background vs outline); component is client-only (`"use client"`)
+- evidence impact: AC14
+- recommended lane: implementation
+- reasoning / effort: pure UI component; no data fetching; low risk
+- required review: confirm `router.push` is used (not `replace`) so filter navigation
+  adds history entries; confirm ALL removes the param (not sets it to "ALL"); confirm
+  `useSearchParams` or prop is used to determine current active state
+- docs impact: none
+
+### T038
+
+- [ ] T038 [US2] Update `GET /api/requests` and `GET /api/requests/incoming` in their route files to apply `?status=` filtering after `getEffectiveStatus()` computation
+- objective: Accept `?status=` query param. Fetch all user records from DB (unchanged).
+  Map to DTOs (which applies `getEffectiveStatus()`). Filter the DTO array by effective
+  status. Return filtered result. ALL or missing param returns full array.
+- files: `app/api/requests/route.ts`, `app/api/requests/incoming/route.ts`
+- validation: `GET /api/requests?status=PAID` returns only requests with effective status PAID;
+  `GET /api/requests?status=EXPIRED` includes PENDING rows past `expiresAt` (implicit expiry);
+  `GET /api/requests?status=ALL` and missing param both return everything; invalid value
+  defaults to ALL (no error)
+- evidence impact: AC15, AC16
+- recommended lane: implementation
+- reasoning / effort: three-line filter in each handler; correctness of EXPIRED filter
+  is the main review point
+- required review: confirm filter is applied on the DTO array (after `getEffectiveStatus`)
+  NOT on the raw Prisma result; confirm EXPIRED filter catches both `status='EXPIRED'` rows
+  AND PENDING rows past expiresAt; confirm invalid status param silently defaults to ALL
+- docs impact: none
+
+### T039
+
+- [ ] T039 [US2] Update outgoing and incoming dashboard pages to read `searchParams.status`, pass to API fetch URL, and render `<FilterBar>` with current status value
+- objective: Both server component pages receive `searchParams` from Next.js App Router.
+  Pass `?status=` to the respective API fetch call. Pass the current status value to
+  `<FilterBar>` as `activeStatus` prop. When the filtered result is empty, show "No
+  requests match this filter." instead of the default empty state.
+- files: `app/(protected)/dashboard/outgoing/page.tsx`,
+  `app/(protected)/dashboard/incoming/page.tsx`
+- validation: Clicking PAID pill renders only PAID requests in list; URL shows `?status=PAID`;
+  no full page reload (Next.js soft navigation); clicking ALL restores full list; when
+  filtered to a status with no matching requests, "No requests match this filter." text shown
+- evidence impact: AC14, AC15, AC16 — full end-to-end
+- recommended lane: implementation
+- reasoning / effort: medium; requires passing searchParams to fetch URL; main risk is
+  cache invalidation on filter change (Next.js revalidation)
+- required review: confirm `<FilterBar>` receives `activeStatus` correctly; confirm empty
+  state message is distinct from the "No requests yet" default empty state; confirm page
+  re-renders correctly on filter change without full reload
+- docs impact: none
+
+---
+
+**Batch checkpoint**: After T039, test filter on both dashboards manually. Verify EXPIRED
+filter includes past-expiry requests. Run existing E2E to confirm no regressions.
+
+---
+
+## Phase 13 — Dashboard Search (AC17-AC19)
+
+**Batch goal**: Debounced counterparty search on both dashboards, combinable with
+status filter, URL-driven. After this batch: AC17, AC18, AC19 verifiable.
+
+### T040
+
+- [ ] T040 [US3] Create `components/SearchInput.tsx` — debounced search input (300ms, router.replace)
+- objective: Client component that renders a text input. On change, starts a 300ms
+  debounce timer (clearing previous timer on each keystroke). After 300ms, calls
+  `router.replace` to update `?search=` in the URL (removes param when empty). Reads
+  current value from `searchParams.search` via prop or `useSearchParams`.
+- files: `components/SearchInput.tsx`
+- validation: Typing "bob" waits 300ms then updates URL to `?search=bob`; typing quickly
+  only fires one URL update; clearing input removes `?search=` param; component is
+  `"use client"`; does not clobber the existing `?status=` param when updating `?search=`
+- evidence impact: AC17, AC19
+- recommended lane: implementation
+- reasoning / effort: debounce pattern with `useEffect` + `useRef` for timer; medium;
+  preserving existing URL params is the main correctness point
+- required review: confirm `router.replace` is used (not `push`) to avoid search history
+  spam; confirm existing `?status=` param is preserved when updating `?search=` (use
+  `URLSearchParams` to merge params, not replace the whole search string); confirm timer
+  cleanup on unmount
+- docs impact: none
+
+### T041
+
+- [ ] T041 [US3] Update `GET /api/requests` and `GET /api/requests/incoming` to apply `?search=` filtering after status filter
+- objective: Accept `?search=` query param. After status filtering, further filter the DTO
+  array by case-insensitive substring match on the counterparty's name, email, and phone
+  (OR logic). On outgoing dashboard the counterparty is the recipient; on incoming the
+  counterparty is the requester. Empty or missing search param is treated as no filter.
+- files: `app/api/requests/route.ts`, `app/api/requests/incoming/route.ts`
+- validation: `GET /api/requests?search=bob` returns only requests where recipient name,
+  email, or phone contains "bob" (case-insensitive); `GET /api/requests?search=+155` matches
+  phone prefix; `GET /api/requests?status=PAID&search=bob` applies both filters; missing
+  search returns all (subject to status filter); phone null values do not throw
+- evidence impact: AC17, AC18
+- recommended lane: implementation
+- reasoning / effort: JS array filter after DTO mapping; small; phone null guard is
+  the main correctness point
+- required review: confirm null phone does not cause `.toLowerCase()` crash (guard with
+  `?? ''`); confirm both params can combine correctly; confirm search runs on DTO fields
+  (not raw DB fields) so phone is available
+- docs impact: none
+
+### T042
+
+- [ ] T042 [US3] Update outgoing and incoming dashboard pages to read `searchParams.search`, pass to API fetch URL, and render `<SearchInput>`
+- objective: Both dashboard pages already read `searchParams` from Next.js App Router.
+  Add `search` to the API fetch URL. Render `<SearchInput>` above the list, passing
+  current search value. When both filter and search produce an empty result, show the
+  same "No requests match this filter." message.
+- files: `app/(protected)/dashboard/outgoing/page.tsx`,
+  `app/(protected)/dashboard/incoming/page.tsx`
+- validation: Typing in search box filters list after 300ms; combined with status filter
+  both params active simultaneously; URL shows `?status=PENDING&search=bob` when both
+  active; clearing search restores full filtered-by-status list; no full page reload
+- evidence impact: AC17, AC18, AC19 — full end-to-end
+- recommended lane: implementation
+- reasoning / effort: additive to T039; main risk is correct param merging in fetch URL
+- required review: confirm fetch URL builds `?status=X&search=Y` when both params present;
+  confirm `<SearchInput>` is above `<FilterBar>` or adjacent (layout choice); confirm
+  empty state handles combined filter+search correctly
+- docs impact: none
+
+---
+
+**Batch checkpoint**: After T042, test search on both dashboards manually with status
+filter active. Try searching by phone number. Run existing E2E to confirm no regressions.
+
+---
+
+## Phase 14 — Pay Simulation and Success Confirmation (AC24-AC25)
+
+**Batch goal**: 2-3s pay delay on the server + spinner + auto-dismiss success banner
+on the client. Thin and isolated — only two files touched.
+
+### T043
+
+- [ ] T043 [US4] Add 2-3s artificial delay to `POST /api/requests/[id]/pay` in `app/api/requests/[id]/pay/route.ts`
+- objective: Insert `await new Promise(r => setTimeout(r, 2000 + Math.random() * 1000))`
+  AFTER the 403 authorization check and BEFORE the conditional `updateMany` write. This
+  simulates payment rail latency without changing any business logic or state transitions.
+- files: `app/api/requests/[id]/pay/route.ts`
+- validation: A pay request takes 2-3 seconds to respond; 403 and 404 responses remain
+  immediate (delay is not hit on those paths); 409 responses (expired/already acted)
+  still work correctly after the delay; the conditional write still executes and returns
+  correct result
+- evidence impact: AC24
+- recommended lane: implementation
+- reasoning / effort: one line added in the correct position; extremely low risk; the
+  main review point is placement (after auth, before write)
+- required review: confirm delay is placed AFTER `if (existing.recipientId !== session.userId)`
+  403 check and BEFORE `prisma.paymentRequest.updateMany`; confirm decline and cancel
+  routes are NOT modified (they remain immediate per spec)
+- docs impact: update `docs/BUILD_NOTES.md` with the delay decision
+
+### T044
+
+- [ ] T044 [US4] Update request detail page `app/(protected)/requests/[id]/page.tsx` — add spinner to Pay button, add `paySuccess` state and auto-dismiss success banner
+- objective: Three changes to the existing client component:
+  (1) When `loading` is true and the action is `pay`, show an `animate-spin` SVG spinner
+  inline in the Pay button alongside "Processing payment…" text.
+  (2) Add `paySuccess` boolean state. On successful pay response, set `paySuccess(true)`.
+  (3) Render a green banner when `paySuccess` is true: "Payment successful!" with an X
+  button for manual dismiss. `useEffect` auto-sets `paySuccess(false)` after 5000ms.
+  Decline and Cancel buttons are not modified.
+- files: `app/(protected)/requests/[id]/page.tsx`
+- validation: Clicking Pay shows spinner for ~2s; green banner appears on success with
+  "Payment successful!" text; banner auto-disappears after 5s; X button dismisses it
+  immediately; clicking Decline shows no spinner; action error (409) exits loading state
+  and shows error message (unchanged behavior)
+- evidence impact: AC24, AC25
+- recommended lane: implementation
+- reasoning / effort: state additions + useEffect; medium; main risk is the 5s timer
+  cleanup on unmount and correct placement relative to existing action error handling
+- required review: confirm `paySuccess` is reset to false when `fetchRequest()` is called
+  again (e.g. on error re-fetch); confirm timer is cleared on component unmount via
+  `useEffect` cleanup return; confirm spinner only appears during Pay (not Decline/Cancel);
+  confirm banner renders above the action buttons area, not replacing them
+- docs impact: none
+
+---
+
+**Batch checkpoint**: After T044, manually test the full pay flow in browser: click Pay,
+observe spinner for 2-3s, observe green banner, wait 5s for auto-dismiss. Test X button.
+Test Decline to confirm no spinner. Run `npx playwright test e2e/happy-path.spec.ts`
+to confirm AC2 still passes (pay flow works end-to-end with the delay).
+
+---
+
+## Phase 15 — E2E Evidence for New Features (AC14-AC25)
+
+**Story goal**: All 12 new ACs (AC14-AC25) have explicit Playwright coverage alongside
+the existing 13. Video and trace artifacts collected for all.
+
+### T045
+
+- [ ] T045 [US1] Write E2E tests for phone recipient in `e2e/phone.spec.ts` (AC20-AC23)
+- objective: Four test cases:
+  (AC20) Create form shows Email/Phone toggle; clicking Phone hides email input and shows
+  phone input.
+  (AC21) Alice creates a request via Bob's seeded phone (+15550002222); request appears
+  as PENDING in outgoing dashboard.
+  (AC22) Alice enters an unregistered phone; "recipient not found" error shown inline.
+  (AC23) Alice enters her own phone (+15550001111); self-request rejection shown inline.
+- files: `e2e/phone.spec.ts`
+- validation: All 4 test cases pass; video artifacts show the form toggle and error states;
+  AC21 test confirms created request ID exists in DB via dashboard appearance
+- evidence impact: AC20-AC23 video evidence
+- recommended lane: implementation
+- reasoning / effort: follows existing login helper pattern; medium; uses Bob's seeded phone
+- required review: confirm seeded phones match the values in seed.ts (T033); confirm
+  AC21 test verifies PENDING status on outgoing dashboard (not just creation response);
+  confirm test isolation (each test creates a fresh request)
+- docs impact: update `docs/VIDEO_EVIDENCE_GUIDE.md` with new artifact paths
+
+### T046
+
+- [ ] T046 [US2] [US3] Write E2E tests for filter and search in `e2e/filter-search.spec.ts` (AC14-AC19)
+- objective: Six test cases:
+  (AC14) Both outgoing and incoming dashboards show 6 pill buttons (ALL, PENDING, PAID,
+  DECLINED, CANCELLED, EXPIRED).
+  (AC15) Selecting PAID on outgoing shows only PAID requests; URL shows `?status=PAID`.
+  (AC16) Selecting EXPIRED includes the pre-seeded past-expiry request.
+  (AC17) Typing "bob" in search on outgoing dashboard filters to requests with Bob as
+  recipient (by name or email).
+  (AC18) Combining status=PENDING and search="bob" produces the correct intersection.
+  (AC19) Filter + search changes do not cause full page reload (URL changes, list updates).
+- files: `e2e/filter-search.spec.ts`
+- validation: All 6 test cases pass; video artifacts show pill selection, URL param updates,
+  and search behavior; AC16 uses the existing past-expiry seed fixture
+- evidence impact: AC14-AC19 video evidence
+- recommended lane: implementation
+- reasoning / effort: builds on existing dashboard locator patterns; medium; AC16 re-uses
+  the T006 seed fixture
+- required review: confirm AC19 "no full page reload" is verified via URL param change
+  without `page.reload()` being called (soft navigation); confirm AC16 uses the seeded
+  past-expiry fixture (not a newly created expired request)
+- docs impact: update `docs/VIDEO_EVIDENCE_GUIDE.md`
+
+### T047
+
+- [ ] T047 [US4] Write E2E tests for pay simulation in `e2e/pay-simulation.spec.ts` (AC24-AC25)
+- objective: Two test cases:
+  (AC24) Alice creates a request; Bob opens it and clicks Pay; spinner is visible and
+  Pay button is disabled; after ~2-3s the request transitions to PAID.
+  (AC25) After payment, a green success banner containing "Payment successful!" is
+  visible alongside the PAID status badge. Bob clicks Decline on a separate request —
+  no spinner visible.
+- files: `e2e/pay-simulation.spec.ts`
+- validation: AC24: `page.locator('[data-testid="pay-spinner"]')` (or equivalent Tailwind
+  `animate-spin` class locator) is visible between click and success; button is disabled
+  during processing. AC25: banner with "Payment successful!" text is visible after
+  success; Decline test completes without spinner class present.
+- evidence impact: AC24-AC25 video evidence (the spinner + banner are the visual evidence)
+- recommended lane: implementation
+- reasoning / effort: medium; timing-sensitive test; use `page.waitForSelector` or
+  Playwright's built-in `toBeVisible` with timeout
+- required review: confirm spinner locator matches the actual element class/attribute
+  used in T044 (coordinate with implementation); confirm test does not rely on exact
+  2-3s delay (use `waitForSelector` with generous timeout, not `page.waitForTimeout`);
+  confirm AC25 Decline test uses a fresh PENDING request
+- docs impact: update `docs/VIDEO_EVIDENCE_GUIDE.md`
+
+### T048
+
+- [ ] T048 Re-run full E2E evidence suite against production, collect artifacts for all 25 ACs, update README and docs
+- objective: Run `BASE_URL=https://lovie-afb-assignment.vercel.app bash scripts/3-run_e2e_evidence.sh .`
+  after deploying all T032-T047 changes. Collect 25 video + 25 trace artifacts (15
+  existing + 10 new from T045-T047 split across 3 spec files). Update README evidence
+  section and `docs/VIDEO_EVIDENCE_GUIDE.md` with new artifact names.
+- files: `artifacts/videos/` (new artifacts), `artifacts/traces/` (new traces),
+  `README.md`, `docs/VIDEO_EVIDENCE_GUIDE.md`
+- validation: All 25+ E2E tests pass against production deployment; `artifacts/videos/`
+  contains named `.webm` files including `phone-AC20-AC23-*.webm`,
+  `filter-search-AC14-AC19-*.webm`, `pay-simulation-AC24-AC25-*.webm`; README evidence
+  section reflects 25 ACs
+- evidence impact: primary submission evidence for new ACs
+- recommended lane: implementation
+- reasoning / effort: evidence collection is first-class work; deploy to Vercel first,
+  seed phone numbers on production DB, then collect
+- required review: confirm production DB has phone numbers seeded (T033 against
+  production with DIRECT_URL); confirm all 25 tests pass before collecting artifacts;
+  confirm `scripts/3-run_e2e_evidence.sh` handles the 3 new spec files correctly
+- docs impact: `README.md` evidence status line updated to "25/25 tests pass";
+  `docs/VIDEO_EVIDENCE_GUIDE.md` artifact list updated

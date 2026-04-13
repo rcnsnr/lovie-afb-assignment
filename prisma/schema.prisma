@@ -16,6 +16,7 @@ model User {
   email     String   @unique
   password  String
   name      String
+  phone     String?  @unique
   createdAt DateTime @default(now())
 
   sentRequests     PaymentRequest[] @relation("Requester")
