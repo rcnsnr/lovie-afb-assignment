@@ -30,8 +30,8 @@ export function FilterBar({ activeStatus, basePath }: FilterBarProps) {
             onClick={() => handleSelect(status)}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               isActive
-                ? "bg-blue-600 text-white"
-                : "border border-gray-300 text-gray-600 hover:bg-gray-50"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100"
             }`}
           >
             {status}

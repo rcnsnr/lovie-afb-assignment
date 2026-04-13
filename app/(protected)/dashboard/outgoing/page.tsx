@@ -8,6 +8,8 @@ import { redirect } from "next/navigation";
 import { ExpiryCountdown } from "@/components/ExpiryCountdown";
 import { FilterBar } from "@/components/FilterBar";
 import { SearchInput } from "@/components/SearchInput";
+import { ContactSummaryCard } from "@/components/ContactSummaryCard";
+import { resolveMatchedContact, computeContactMetrics } from "@/lib/contact-metrics";
 
 const VALID_STATUSES = ["PENDING", "PAID", "DECLINED", "CANCELLED", "EXPIRED"] as const;
 
@@ -85,6 +87,14 @@ export default async function OutgoingDashboardPage({
       })
     : statusFiltered;
 
+  // Contact summary card: detect single match from allDtos (pre-status-filter) so the
+  // card persists across status filter changes (AC30). Only fetch metrics when a single
+  // contact is matched AND the search is non-empty.
+  const matchedContact = resolveMatchedContact(searchParam ?? "", allDtos, "outgoing");
+  const contactMetrics = matchedContact
+    ? await computeContactMetrics(session.userId, matchedContact.id)
+    : null;
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
@@ -104,33 +114,37 @@ export default async function OutgoingDashboardPage({
         </Link>
       </div>
 
-      <div className="mb-4">
+      <div
+        data-testid="controls-surface"
+        className="mb-6 space-y-3 rounded-xl bg-slate-50 p-4 shadow-sm ring-1 ring-slate-200"
+      >
         <FilterBar activeStatus={activeStatus} basePath="/dashboard/outgoing" />
-      </div>
-
-      <div className="mb-4">
         <Suspense fallback={null}>
           <SearchInput basePath="/dashboard/outgoing" />
         </Suspense>
+        {matchedContact && contactMetrics && (
+          <ContactSummaryCard contact={matchedContact} metrics={contactMetrics} />
+        )}
+        {requests.length === 0 && (
+          <p className="py-8 text-center text-sm text-slate-600">
+            {searchParam ? (
+              `No results for "${searchParams.search}".`
+            ) : activeStatus === "ALL" ? (
+              <>
+                No outgoing requests yet.{" "}
+                <Link href="/requests/new" className="text-blue-600 hover:underline">
+                  Send one now
+                </Link>
+                .
+              </>
+            ) : (
+              `No ${activeStatus.toLowerCase()} requests.`
+            )}
+          </p>
+        )}
       </div>
 
-      {requests.length === 0 ? (
-        <p className="py-12 text-center text-sm text-gray-500">
-          {searchParam ? (
-            `No results for "${searchParams.search}".`
-          ) : activeStatus === "ALL" ? (
-            <>
-              No outgoing requests yet.{" "}
-              <Link href="/requests/new" className="text-blue-600 hover:underline">
-                Send one now
-              </Link>
-              .
-            </>
-          ) : (
-            `No ${activeStatus.toLowerCase()} requests.`
-          )}
-        </p>
-      ) : (
+      {requests.length > 0 && (
         <div className="divide-y divide-gray-100 rounded-xl bg-white shadow-sm ring-1 ring-gray-200">
           {requests.map((req) => (
             <RequestRow key={req.id} req={req} />
