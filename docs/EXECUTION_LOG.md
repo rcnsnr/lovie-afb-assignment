@@ -19,6 +19,31 @@ Use it to capture:
 
 ---
 
+### 2026-04-13 — Batch B: phone recipient API path + form toggle (T035-T036)
+
+#### What was done
+
+- T035: Extended `POST /api/requests` Zod schema — `recipientEmail` made optional, `recipientPhone` added with E.164-like regex `/^\+?[1-9]\d{6,14}$/`; `.superRefine()` enforces exactly-one-of (both or neither → 400 field-level error); handler branches `findUnique({ where: { phone } })` vs `findUnique({ where: { email } })`; 404 and 422 guards identical for both paths
+- T036: Added `identificationMethod` state (`'email' | 'phone'`) to create-request form; pill toggle row above recipient input; switching clears the hidden field and resets error state; phone input uses `type="text"`, `inputMode="tel"`, placeholder `"+15551234567"`, client-side E.164-like format check; 404 message branches by active method; submit payload sends either `recipientEmail` or `recipientPhone`
+
+#### Why it was done
+
+- Completes the phone recipient creation path end-to-end (AC15, AC16, AC21)
+
+#### Artifacts changed
+
+- `app/api/requests/route.ts`
+- `app/(protected)/requests/new/page.tsx`
+- `specs/001-p2p-payment-request/tasks.md` (T035-T036 marked complete)
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` → 5/5 checks green
+- `npm run build` → 13/13 pages, TypeScript strict, zero errors
+- Branch pushed: `feat/phone-filter-search-pay-simulation`
+
+---
+
 ### 2026-04-13 — Batch A: phone field foundation (T032-T034)
 
 #### What was done

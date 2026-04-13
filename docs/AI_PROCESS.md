@@ -160,6 +160,9 @@ Use this document to show how AI was used in a controlled way.
 - Phase 10 Batch A (T032–T034): phone field foundation complete on `feat/phone-filter-search-pay-simulation`.
   DB migration applied via MCP (IPv4 constraint), seed phone numbers set, DTO extended.
   `phase_closeout.sh` all 5 checks pass. No corrections required.
+- Phase 11 Batch B (T035–T036): phone recipient API path + form toggle complete.
+  `.superRefine()` exactly-one-of schema, branched `findUnique`, pill toggle UI.
+  `phase_closeout.sh` all 5 checks pass. No corrections required. Branch pushed.
 - AI drove all file creation; human review focused on confirming directory structure
   against the plan and approving the `prisma init` workaround decision.
 
