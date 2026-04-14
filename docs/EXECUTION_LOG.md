@@ -19,6 +19,56 @@ Use it to capture:
 
 ---
 
+### 2026-04-14 — Batch C-3: T054 E2E + FilterBar/SearchInput refactor
+
+#### What was done
+
+- Wrote `e2e/contact-summary-card.spec.ts` with 7 tests covering AC26-AC32
+  (identity + metrics, zero/multi/empty match, AC30 status-filter
+  persistence, mobile 375px, controls-surface wrapper).
+- Root-caused and fixed a reproducible dev-mode race where
+  `useSearchParams()` inside a Suspense boundary returned stale/null data
+  at the moment of a client-side `router.push`, leaving URL unchanged
+  after a filter-pill click (AC30 failure).
+- **FilterBar → server component.** Removed `"use client"`, `useRouter`,
+  `useSearchParams`, and `onClick`. Each pill is a `<Link href={...}>`
+  computed on the server from `currentSearch` + target status. Works
+  with or without JavaScript — no hydration timing window.
+- **SearchInput → prop-based.** Replaced `useSearchParams` with
+  `initialSearch` + `currentStatus` props; kept `router.replace` in
+  debounced callback; dropped Suspense wrapper.
+- Both dashboard pages now pass server-derived props so filter/search
+  preservation is server-driven rather than client-hook-derived.
+- `e2e/filter-search.spec.ts`: `getByRole("button")` → `getByRole("link")`
+  for filter pills; `fill()` → `pressSequentially({ delay: 100 })` for
+  search input; URL-assertion timeouts raised to 10s.
+- Added `e2e/global-setup.ts` + `playwright.config.ts` wiring so E2E
+  can run against Vercel Preview deployments via `BYPASS_URL` with
+  `_vercel_share=<token>` — the setup captures the bypass cookie into
+  `e2e/.auth/vercel-bypass.json` (gitignored) so all workers inherit
+  authenticated state.
+- Marked T054 [x] in `specs/001-p2p-payment-request/tasks.md`.
+
+#### Validation
+
+- Local dev: 7/7 pass on contact-summary-card in ~112s.
+- Vercel Preview (commit 598c4d2):
+  - contact-summary-card alone: 7/7 in ~40s.
+  - **contact-summary-card + filter-search combined: 13/13 in 76s.**
+- `npm run build`: clean, zero TS errors.
+- `bash scripts/phase_closeout.sh`: 5/5 pass.
+
+#### Notes
+
+- The move from client + router.push → server component + Link is the
+  durable fix; also reduces client JS bundle for the dashboard route.
+- Preview E2E was 3× faster than local dev (76s vs 4-5min for the same
+  13 tests) — Preview uses the prod build without on-demand compile.
+  Future E2E runs should prefer Preview URLs.
+- Vercel-bypass Playwright setup is reusable for any future Preview E2E.
+
+---
+
 ### 2026-04-14 — Branch publish + Preview env fix (feat/contact-summary-card)
 
 #### What was done

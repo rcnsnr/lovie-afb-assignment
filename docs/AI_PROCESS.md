@@ -479,3 +479,69 @@ expiresAt > NOW()`); `count === 0` → 409; second `findUnique` for DTO (U3 patt
   involved
 - `vercel redeploy <url>` is the right tool when env vars are added after a
   git-triggered build; avoids pushing a dummy commit just to re-trigger CI
+
+## Phase 18 — Batch C-3: T054 E2E + hydration-race root cause fix (2026-04-14)
+
+### What AI did in Phase 18
+
+- wrote 7 Playwright tests for the contact summary card covering the full
+  AC26-AC32 surface (single match identity+metrics, zero/multi/empty match,
+  AC30 status-filter persistence, mobile 375px stack, controls-surface
+  wrapper) using `data-testid` anchors that survive adjacent DOM noise
+- when AC30 failed reproducibly in dev mode with the URL staying at
+  `?search=bob` after clicking a PENDING pill, did not assume flakiness;
+  instead worked through a short ladder of hypotheses (Suspense rendering,
+  stale `useSearchParams`, Playwright-React `fill()` issues, hydration
+  timing) until the `router.push`-inside-Suspense race was isolated as the
+  real cause
+- chose the durable architectural fix: convert FilterBar from a client
+  component (`useRouter` + `onClick` + `router.push`) to a server component
+  rendering `<Link>` elements whose `href` is computed on the server from
+  `currentSearch` + target status. Works without JavaScript, works before
+  hydration, works during hydration — there is no longer a race window
+- changed SearchInput analogously: kept it as a client component (still
+  needs the debounced controlled-input behavior), but replaced
+  `useSearchParams` with two server-passed props (`initialSearch`,
+  `currentStatus`) and removed the Suspense wrapper. `router.replace` inside
+  the debounce was reliable again once the Suspense coupling was gone
+- authored `e2e/global-setup.ts` + `playwright.config.ts` wiring so E2E
+  can run against Vercel Preview deployments via a `_vercel_share` token.
+  The setup visits the shareable URL once to capture the auth cookie into
+  `e2e/.auth/vercel-bypass.json` (gitignored), then every test worker
+  inherits the state via Playwright's `storageState`
+- validated against Vercel Preview (commit 598c4d2): 7/7 on
+  contact-summary-card alone, 13/13 combined with filter-search regression
+
+### Where human judgment was needed in Phase 18
+
+- a local dev-mode test timeout was hiding a real architectural problem.
+  Bumping timeouts or reverting the E2E scope would have papered over it;
+  moving to a server-component-with-Link design was the judgment call that
+  addressed both the AC30 symptom and the broader hydration coupling
+- decided to test against Vercel Preview once local results became
+  inconsistent (7/7 alone, 7/13 combined). The combined failures were
+  symptoms of dev-mode slowness from accumulated DB state, not real
+  regressions — Preview validated that in 76s for 13/13
+- rejected a tempting shortcut (modify only test selectors / add retries)
+  in favor of the architectural fix, because the original code had a
+  latent race that would surface again elsewhere
+
+### Patterns worth noting from Phase 18
+
+- **server component + `<Link>`** is the right shape for any navigation
+  that is just "update URL and let the server re-render". It beats
+  `useRouter().push` inside a client component for: bundle size, graceful
+  degradation, and — the key one — absence of a hydration window where
+  clicks can be "seen" but not handled
+- `useSearchParams()` inside a `Suspense` boundary has a narrow failure
+  mode in dev mode where it can return stale/null data at the instant a
+  client-side navigation callback fires. When all you need is the current
+  query, passing it from the server render as a prop is both cheaper and
+  more reliable
+- Vercel Preview E2E runs ~3× faster than local dev E2E because there's no
+  on-demand compile. Any future regression check that hits 3+ full-page
+  navigations should prefer Preview URLs
+- the MCP Vercel `get_access_to_vercel_url` tool plus Playwright's
+  `globalSetup` + `storageState` is a repeatable recipe for protected
+  Preview E2E; worth making this the default once `BASE_URL` starts with
+  `https://` in a future refinement
