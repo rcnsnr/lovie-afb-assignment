@@ -27,12 +27,12 @@ test("AC14 — Both dashboards show 6 status filter pills", async ({ page }) => 
 
   await page.goto("/dashboard/outgoing");
   for (const status of ALL_STATUSES) {
-    await expect(page.getByRole("button", { name: status, exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: status, exact: true })).toBeVisible();
   }
 
   await page.goto("/dashboard/incoming");
   for (const status of ALL_STATUSES) {
-    await expect(page.getByRole("button", { name: status, exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: status, exact: true })).toBeVisible();
   }
 });
 
@@ -51,7 +51,7 @@ test("AC15 — PAID filter updates URL and excludes non-PAID requests", async ({
   await expect(page.getByText("$15.15").first()).toBeVisible();
 
   // Click PAID pill
-  await page.getByRole("button", { name: "PAID", exact: true }).click();
+  await page.getByRole("link", { name: "PAID", exact: true }).click();
 
   // URL reflects the filter
   await expect(page).toHaveURL(/[?&]status=PAID/);
@@ -72,7 +72,7 @@ test("AC16 — EXPIRED filter on incoming shows seeded past-expiry fixture", asy
   await page.goto("/dashboard/incoming");
 
   // Click EXPIRED pill
-  await page.getByRole("button", { name: "EXPIRED", exact: true }).click();
+  await page.getByRole("link", { name: "EXPIRED", exact: true }).click();
 
   // URL reflects the filter
   await expect(page).toHaveURL(/[?&]status=EXPIRED/);
@@ -99,11 +99,13 @@ test("AC17 — Search 'bob' on outgoing filters to Bob as recipient", async ({ p
   await expect(page.getByText("$17.00").first()).toBeVisible();
   await expect(page.getByText("$18.00").first()).toBeVisible();
 
-  // Type in the search input
-  await page.locator('input[type="search"]').fill("bob");
+  // Type in the search input (pressSequentially to trigger React onChange reliably)
+  const searchInput = page.locator('input[type="search"]');
+  await searchInput.click();
+  await searchInput.pressSequentially("bob", { delay: 100 });
 
-  // URL updates after debounce
-  await expect(page).toHaveURL(/[?&]search=bob/, { timeout: 2000 });
+  // URL updates after debounce + server round-trip
+  await expect(page).toHaveURL(/[?&]search=bob/, { timeout: 10000 });
 
   // Search input reflects the typed value
   await expect(page.locator('input[type="search"]')).toHaveValue("bob");
@@ -131,7 +133,7 @@ test("AC18 — Combined PENDING filter + 'bob' search shows intersection", async
   await expect(page).toHaveURL(/search=bob/);
 
   // PENDING pill is rendered (active state)
-  await expect(page.getByRole("button", { name: "PENDING", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "PENDING", exact: true })).toBeVisible();
 
   // Search input is pre-populated from the URL param
   await expect(page.locator('input[type="search"]')).toHaveValue("bob");
@@ -154,7 +156,7 @@ test("AC19 — Filter and search use soft navigation without full page reload", 
   });
 
   // Click a filter pill (router.push — immediate)
-  await page.getByRole("button", { name: "PENDING", exact: true }).click();
+  await page.getByRole("link", { name: "PENDING", exact: true }).click();
   await expect(page).toHaveURL(/status=PENDING/);
 
   // Marker survives — soft navigation confirmed
@@ -163,9 +165,11 @@ test("AC19 — Filter and search use soft navigation without full page reload", 
   );
   expect(afterFilter).toBe(true);
 
-  // Type in search (router.replace — 300ms debounce)
-  await page.locator('input[type="search"]').fill("alice");
-  await expect(page).toHaveURL(/search=alice/, { timeout: 2000 });
+  // Type in search (pressSequentially to trigger React onChange reliably)
+  const searchInput = page.locator('input[type="search"]');
+  await searchInput.click();
+  await searchInput.pressSequentially("alice", { delay: 100 });
+  await expect(page).toHaveURL(/search=alice/, { timeout: 10000 });
 
   // Marker still survives — both status and search are soft navigation
   const afterSearch = await page.evaluate(

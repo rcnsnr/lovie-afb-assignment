@@ -1,33 +1,31 @@
-"use client";
-
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const STATUSES = ["ALL", "PENDING", "PAID", "DECLINED", "CANCELLED", "EXPIRED"] as const;
 type Status = (typeof STATUSES)[number];
 
 interface FilterBarProps {
   activeStatus: string;
-  basePath: string; // e.g. "/dashboard/outgoing"
+  basePath: string;
+  currentSearch?: string;
 }
 
-export function FilterBar({ activeStatus, basePath }: FilterBarProps) {
-  const router = useRouter();
+export function FilterBar({ activeStatus, basePath, currentSearch }: FilterBarProps) {
   const current = STATUSES.includes(activeStatus as Status) ? activeStatus : "ALL";
-
-  function handleSelect(status: Status) {
-    const url = status === "ALL" ? basePath : `${basePath}?status=${status}`;
-    router.push(url);
-  }
 
   return (
     <div className="flex flex-wrap gap-2">
       {STATUSES.map((status) => {
         const isActive = status === current;
+        const params = new URLSearchParams();
+        if (currentSearch) params.set("search", currentSearch);
+        if (status !== "ALL") params.set("status", status);
+        const qs = params.toString();
+        const href = qs ? `${basePath}?${qs}` : basePath;
+
         return (
-          <button
+          <Link
             key={status}
-            type="button"
-            onClick={() => handleSelect(status)}
+            href={href}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               isActive
                 ? "bg-blue-600 text-white shadow-sm"
@@ -35,7 +33,7 @@ export function FilterBar({ activeStatus, basePath }: FilterBarProps) {
             }`}
           >
             {status}
-          </button>
+          </Link>
         );
       })}
     </div>

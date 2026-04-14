@@ -118,10 +118,16 @@ export default async function OutgoingDashboardPage({
         data-testid="controls-surface"
         className="mb-6 space-y-3 rounded-xl bg-slate-50 p-4 shadow-sm ring-1 ring-slate-200"
       >
-        <FilterBar activeStatus={activeStatus} basePath="/dashboard/outgoing" />
-        <Suspense fallback={null}>
-          <SearchInput basePath="/dashboard/outgoing" />
-        </Suspense>
+        <FilterBar
+          activeStatus={activeStatus}
+          basePath="/dashboard/outgoing"
+          currentSearch={searchParams.search}
+        />
+        <SearchInput
+          basePath="/dashboard/outgoing"
+          initialSearch={searchParams.search}
+          currentStatus={activeStatus}
+        />
         {matchedContact && contactMetrics && (
           <ContactSummaryCard contact={matchedContact} metrics={contactMetrics} />
         )}

@@ -1,21 +1,29 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 interface SearchInputProps {
-  basePath: string; // e.g. "/dashboard/outgoing"
+  basePath: string;
   placeholder?: string;
+  initialSearch?: string;
+  currentStatus?: string;
 }
 
 export function SearchInput({
   basePath,
   placeholder = "Search by name, email, or phone…",
+  initialSearch,
+  currentStatus,
 }: SearchInputProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [value, setValue] = useState(searchParams.get("search") ?? "");
+  const [value, setValue] = useState(initialSearch ?? "");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const statusRef = useRef(currentStatus);
+
+  useEffect(() => {
+    statusRef.current = currentStatus;
+  }, [currentStatus]);
 
   useEffect(() => {
     return () => {
@@ -30,12 +38,12 @@ export function SearchInput({
     if (timerRef.current) clearTimeout(timerRef.current);
 
     timerRef.current = setTimeout(() => {
-      // Merge with existing params so ?status= is preserved
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams();
+      if (statusRef.current && statusRef.current !== "ALL") {
+        params.set("status", statusRef.current);
+      }
       if (q.trim()) {
         params.set("search", q.trim());
-      } else {
-        params.delete("search");
       }
       const qs = params.toString();
       router.replace(qs ? `${basePath}?${qs}` : basePath);
