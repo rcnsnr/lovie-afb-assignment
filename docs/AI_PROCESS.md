@@ -545,3 +545,62 @@ expiresAt > NOW()`); `count === 0` → 409; second `findUnique` for DTO (U3 patt
   `globalSetup` + `storageState` is a repeatable recipe for protected
   Preview E2E; worth making this the default once `BASE_URL` starts with
   `https://` in a future refinement
+
+## Phase 19 — Batch C-4: main merge + production E2E + submission docs (2026-04-14)
+
+### What AI did in Phase 19
+
+- ran the `/git-flow-guard` skill before the final merge, surfaced the
+  evidence/scope drift, and produced a clean two-step plan (commit
+  evidence bundle → fast-forward main) with a commit message that
+  explained the partial-evidence situation
+- fast-forwarded `main` from `72fc813` (spec-only) to `ad2bd6e`
+  (8 commits ahead) and monitored the Vercel auto-deploy via MCP until
+  the `dpl_Ek4fiH8JfA72xAWuhQPaBu2UEmiR` production deployment turned
+  READY with branchAlias pointing at `main`
+- ran the full 34-test Playwright suite against the public production
+  URL — **34/34 green in 183s**, the durable post-refactor validation
+- collected a fresh evidence bundle (34 videos + 34 traces) with traces
+  forced on via `scripts/3-run_e2e_evidence.sh`, replacing the
+  Batch F-snapshot 27 artifacts committed earlier on the branch
+- rewrote the four reviewer-facing submission artifacts in one batch
+  (README, EVIDENCE_INDEX, VIDEO_EVIDENCE_GUIDE, RELEASE_NOTES) so the
+  counts, scenario mappings, and release-note versioning match reality
+  (34 tests, v1.0 + v1.1 structure)
+- authored `docs/SUBMISSION_COVER_NOTE.md` as the email-ready narrative
+  with the "hardest part" (AC30 hydration race) and "AI helped /
+  hindered" sections drawn directly from Phase 18's diagnostic ladder
+- marked T055 and T056 `[x]` so the tasks spreadsheet and the delivered
+  state stay in sync
+
+### Where human judgment was needed in Phase 19
+
+- the 8 Preview failures observed before merge were diagnosed as a
+  Vercel-SSO + `context.clearCookies()` infrastructure artifact, not
+  code regressions. Judgment was to promote to production rather than
+  chase a cookie-persistence workaround — validated by the 34/34
+  green on public production, which has no SSO
+- the "commit artifacts first, then fast-forward merge" ordering was a
+  deliberate history-shape choice per the git-flow-guard verdict: it
+  keeps the evidence commit phase-labeled and attributable, even though
+  those artifacts would be replaced minutes later by the fresh 34-test
+  bundle. The alternative (merge first, collect post-deploy) would have
+  left `main` without any evidence bundle during the deploy window
+
+### Patterns worth noting from Phase 19
+
+- **Production E2E is the correct final-validation surface** whenever
+  the app is public. Preview requires either bypass-token gymnastics
+  or a cookie-persistence strategy; production has neither, so it
+  produces the cleanest evidence run. Reserve Preview E2E for
+  "is-this-real-or-infra" questions during active development
+- A second-gate ship-check before the submission email catches drift
+  that a clean build does not: evidence counts, scenario tables, release
+  notes "known follow-ups" lists, and cover-note presence are all
+  reviewer-visible and none of them show up in `npm run build`. Running
+  `/ship-check` once per final-phase is cheap insurance
+- Coupling the `/git-flow-guard` output format to actual execution
+  (recommended action → commit message → risks-if-skipped) keeps
+  pre-merge decisions auditable in the chat trail without a separate
+  PR description. Works well for solo-delivery workflows where the
+  commit trail is the reviewer's reconstruction surface

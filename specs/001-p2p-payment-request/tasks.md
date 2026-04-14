@@ -1187,7 +1187,7 @@ collection for all 34 ACs (27 existing + 7 new).
 
 ### T055
 
-- [ ] T055 Run `bash scripts/phase_closeout.sh`, update `docs/EXECUTION_LOG.md` and `docs/AI_PROCESS.md` for the contact summary card batch
+- [x] T055 Run `bash scripts/phase_closeout.sh`, update `docs/EXECUTION_LOG.md` and `docs/AI_PROCESS.md` for the contact summary card batch
 - objective: Phase closeout sequence:
   (1) Run `bash scripts/phase_closeout.sh` — build + lint + type check must all pass.
   (2) Append a new dated entry to `docs/EXECUTION_LOG.md` covering T049-T054:
@@ -1207,7 +1207,7 @@ collection for all 34 ACs (27 existing + 7 new).
 
 ### T056
 
-- [ ] T056 Deploy to production, re-run full E2E evidence suite for all 34 ACs, update README and docs
+- [x] T056 Deploy to production, re-run full E2E evidence suite for all 34 ACs, update README and docs
 - objective: Final evidence collection:
   (1) Merge or deploy `feat/contact-summary-card` to production on Vercel. Confirm
   `https://lovie-afb-assignment.vercel.app` serves the new contact card UI.

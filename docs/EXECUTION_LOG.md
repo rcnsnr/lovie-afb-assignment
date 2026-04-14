@@ -19,6 +19,75 @@ Use it to capture:
 
 ---
 
+### 2026-04-14 — Batch C-4: Main merge + 34/34 production E2E + submission docs (T055, T056)
+
+#### What was done
+
+- Fast-forwarded `main` from `72fc813` to `ad2bd6e` (8 commits covering
+  Batch C-1 through C-3). Vercel auto-deploy to production completed
+  with target `production` and deployment id `dpl_Ek4fiH8JfA72xAWuhQPaBu2UEmiR`.
+- Ran the full 34-test Playwright suite against the public production URL
+  (`https://lovie-afb-assignment.vercel.app`) — **34/34 pass in 183s**
+  (3 min). This is the durable post-refactor validation (no Vercel SSO,
+  no cookie-wipe artifacts, no bypass-token single-use issues).
+- Re-collected evidence with `scripts/3-run_e2e_evidence.sh` and
+  `--trace on`: 34 `.webm` + 34 `.zip` in `artifacts/`.
+- Updated submission-facing docs:
+  - `README.md`: Project Overview expanded to reflect AC14–AC32
+    (filter/search, phone, pay simulation, contact card); Evidence
+    section counts `15 → 34`; AI Workflow section adds the Opus/Sonnet
+    effort lanes and the Vercel-MCP-backed Playwright bypass pattern.
+  - `docs/EVIDENCE_INDEX.md`: counts `15 → 34` and scenario mapping for
+    every AC from AC1 to AC32.
+  - `docs/VIDEO_EVIDENCE_GUIDE.md`: adds `contact-summary-card-AC26-*`
+    through `AC32-*` entries and the `expiration-AC5-server-*`
+    server-side variant; counts corrected to 34.
+  - `RELEASE_NOTES.md`: rewritten as v1.0 + v1.1 sections. v1.1 covers
+    Batches D (filter/search AC14–19), E (pay sim AC24–25), F (phone
+    AC20–23), and C (contact card AC26–32) with architectural notes on
+    the FilterBar server-component refactor. Removed stale
+    "known follow-ups" items that were delivered.
+  - `docs/SUBMISSION_COVER_NOTE.md` (new): email-ready cover note with
+    what-was-built summary, demo URL + credentials, evidence pointers,
+    **hardest part of the assignment** (AC30 hydration race narrative),
+    and **how AI helped / hindered** honest appraisal.
+- Marked T055 and T056 `[x]` in `specs/001-p2p-payment-request/tasks.md`.
+
+#### Validation
+
+- `npm run build`: clean, 13 static pages.
+- `bash scripts/phase_closeout.sh`: 5/5 pass (auto-fix, lint, typecheck,
+  prisma validate, prisma generate).
+- Production E2E: **34/34 green** in 183s.
+- Production deploy verified reachable: `HTTP 200 /login`, ~1.5s
+  first-byte.
+
+#### Artifacts changed
+
+- `specs/001-p2p-payment-request/tasks.md` (T055, T056 marked `[x]`)
+- `README.md` (Project Overview, Evidence counts, AI Workflow)
+- `docs/EVIDENCE_INDEX.md` (rewritten, 34-test mapping)
+- `docs/VIDEO_EVIDENCE_GUIDE.md` (rewritten, 34-test packaging)
+- `RELEASE_NOTES.md` (rewritten, v1.0 + v1.1)
+- `docs/SUBMISSION_COVER_NOTE.md` (new)
+- `docs/EXECUTION_LOG.md` (this entry)
+- `docs/AI_PROCESS.md` (Phase 19)
+- `artifacts/videos/*.webm` (34 fresh captures, replacing the Batch F
+  snapshot of 27)
+- `artifacts/traces/*.zip` (34 fresh traces)
+
+#### Notes
+
+- Public production URL has no SSO; the 8 Preview-only failures observed
+  during earlier regression (all traced to `context.clearCookies()` wiping
+  the Vercel bypass cookie) do not apply here. The 34/34 green is the
+  correct and final validation.
+- Evidence artifacts are tracked in git under `artifacts/` (intentional
+  repo-visible bundle — `.gitignore` has `artifacts/` commented out).
+  This keeps the reviewer one `git clone` away from the evidence.
+
+---
+
 ### 2026-04-14 — Batch C-3: T054 E2E + FilterBar/SearchInput refactor
 
 #### What was done

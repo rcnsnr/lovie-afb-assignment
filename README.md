@@ -6,16 +6,17 @@ This repository is intended to deliver a reviewer-friendly implementation of the
 
 ## Project Overview
 
-The feature is expected to support:
+The feature supports:
 
-- creating payment requests using recipient contact, amount, and an optional note
+- creating payment requests using email **or phone** as recipient contact, an integer-minor-units amount, and an optional note
 - generating a unique request identifier and shareable link
-- viewing outgoing and incoming request dashboards
-- handling request statuses such as pending, paid, declined, cancelled, and expired
-- paying, declining, or cancelling where allowed
-- enforcing 7-day expiration
-- responsive web usage on desktop and mobile
-- public demo deployment
+- viewing outgoing and incoming request dashboards with status filter pills (ALL / PENDING / PAID / DECLINED / CANCELLED / EXPIRED) and debounced name/email/phone search
+- an inline **contact summary card** that appears on either dashboard when the search resolves to exactly one counterparty, showing identity + relationship metrics (sent / received counts and pending / paid / declined totals)
+- handling request statuses: pending, paid, declined, cancelled, expired
+- paying, declining, or cancelling where allowed, with an explicit 2–3s payment simulation (spinner + success banner) so the network state is visible
+- server-side enforcement of 7-day expiration
+- responsive web usage on desktop and mobile (card stacks vertically at 375px)
+- public demo deployment on Vercel + Supabase Postgres
 
 ## Delivery Philosophy
 
@@ -40,13 +41,13 @@ It should show a controlled build process:
 
 ## Evidence
 
-- E2E videos: `artifacts/videos/` — 15 `.webm` files, one per test (all ACs)
-- Playwright traces: `artifacts/traces/` — 15 `.zip` files, viewable in [Playwright Trace Viewer](https://trace.playwright.dev)
+- E2E videos: `artifacts/videos/` — one `.webm` per test, covering all 34 tests (AC1–AC32 plus two AC29 sub-variants and the AC5 server-side check)
+- Playwright traces: `artifacts/traces/` — matching `.zip` per test, viewable in [Playwright Trace Viewer](https://trace.playwright.dev)
 - Walkthrough video: _(not provided — E2E videos in `artifacts/videos/` serve as evidence)_
 
-> **Evidence status**: 15/15 tests pass against the production deployment at
-> `https://lovie-afb-assignment.vercel.app`. Video and trace artifacts are gitignored
-> (binary files — not in git). Re-collect after cloning:
+> **Evidence status**: 34/34 tests pass against the production deployment at
+> `https://lovie-afb-assignment.vercel.app`. Artifacts are tracked in git under
+> `artifacts/` for reviewer convenience. Re-collect with:
 > `BASE_URL=https://lovie-afb-assignment.vercel.app bash scripts/3-run_e2e_evidence.sh .`
 
 ## Tech Stack
@@ -69,16 +70,24 @@ If the final implementation differs, update this section to match the real build
 
 Primary working surface:
 
-- Claude Code
+- Claude Code (CLI, with MCP integrations for Vercel and Supabase)
+
+Models and effort lanes (per `CLAUDE.md`):
+
+- **Planning / architecture**: Opus 4.6 at high effort — spec review, clarifications, architecture trade-offs, hard debugging
+- **Implementation**: Sonnet 4.6 at medium effort — thin vertical slices, routine code changes, most doc updates
+- **Documentation cleanup**: Sonnet 4.6 at low/medium effort — README, AI process notes, submission polish
 
 Workflow backbone:
 
-- GitHub Spec-Kit
+- GitHub Spec-Kit: constitution → specify → clarify → checklist → plan → tasks → analyze → implement
+- Phase-end validation via `scripts/phase_closeout.sh` (auto-fix + lint + typecheck + Prisma validate)
 
 Local support layers:
 
 - concise local skills for spec review, edge-case audit, implementation discipline, ship checks, and git flow hygiene
 - condensed local standards for lifecycle, change impact, and implementation defaults
+- a lightweight Playwright bypass setup (`e2e/global-setup.ts`) that uses the Vercel MCP server to fetch protected-Preview auth cookies so E2E can run against any branch deployment
 
 ## Reviewer-Facing Files
 
