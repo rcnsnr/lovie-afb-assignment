@@ -14,7 +14,7 @@ out/
 # Re-run bash scripts/3-run_e2e_evidence.sh after seeding the DB for passing-flow evidence
 test-results/
 playwright-report/
-artifacts/
+#artifacts/
 
 # Vercel
 .vercel/
@@ -27,3 +27,4 @@ next-env.d.ts
 .DS_Store
 tsconfig.tsbuildinfo
 .vercel
+e2e/.auth/

@@ -1138,7 +1138,7 @@ evidence is ready; proceed to production deployment and evidence collection.
 
 ### T054
 
-- [ ] T054 [US6] Write E2E tests for contact summary card in `e2e/contact-summary-card.spec.ts` (AC26-AC32)
+- [x] T054 [US6] Write E2E tests for contact summary card in `e2e/contact-summary-card.spec.ts` (AC26-AC32)
 - objective: Seven named test cases using the existing `loginAs` helper pattern (Alice logs
   in as <alice@example.com> / demo1234):
   **Test 1 — AC26+AC27+AC28** "Single match shows contact card with identity and metrics":
