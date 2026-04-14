@@ -445,3 +445,37 @@ expiresAt > NOW()`); `count === 0` → 409; second `findUnique` for DTO (U3 patt
 - SSR smoke-testing with curl + grep is a reliable substitute for E2E when the
   question is "does the page render the right DOM nodes?" — faster than Playwright
   and doesn't depend on browser hydration timing
+
+## Phase 17-infra — Branch publish + Preview env fix (2026-04-14)
+
+### What AI did in Phase 17-infra
+
+- recognized the "application error on Preview" symptom as the exact recurring
+  pattern from the previous branch (missing branch-scoped Preview env vars at
+  build time) without debugging from scratch — applied the known fix directly
+- split the resolution into two orthogonal steps: (1) add env vars via
+  `vercel env add KEY preview <branch-name>`, (2) trigger redeploy via
+  `vercel redeploy <prior-git-deployment-url>` so the git-branch alias picks
+  up the new env
+- verified the fix via Vercel SSO response pattern (HTTP 401 with
+  `server: Vercel` confirms Vercel's deployment-protection layer is responding,
+  which means the deployment is reachable; the user's browser SSO passes
+  through to the app)
+
+### Where human judgment was needed in Phase 17-infra
+
+- the rtk proxy strips most git output to "ok" or "(up-to-date)", which made
+  `git branch -vv` unreadable for upstream verification; bypassing with
+  `command git` was a small but necessary workaround to confirm upstream
+  tracking was set
+
+### Patterns worth noting from Phase 17-infra
+
+- recurring infra patterns (like this Preview env fix) deserve a short recipe
+  in runbook form; current `scripts/set-vercel-env.sh` adds preview to all
+  branches when `--include-preview` is passed, which doesn't match the
+  branch-scoped pattern the project uses. Consider extending the script to
+  accept `--preview-branch <name>` in the future if more branches will be
+  involved
+- `vercel redeploy <url>` is the right tool when env vars are added after a
+  git-triggered build; avoids pushing a dummy commit just to re-trigger CI

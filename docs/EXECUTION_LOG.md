@@ -19,6 +19,50 @@ Use it to capture:
 
 ---
 
+### 2026-04-14 — Branch publish + Preview env fix (feat/contact-summary-card)
+
+#### What was done
+
+- Published `feat/contact-summary-card` to origin with upstream tracking (3
+  commits: Batch C-1 foundation, Batch C-2 integration, docs closeout sync)
+- Added Vercel Preview env vars scoped to `feat/contact-summary-card`:
+  `DATABASE_URL` and `SESSION_SECRET` (same pattern as earlier branch-scoped
+  preview setup for `feat/phone-filter-search-pay-simulation`)
+- Ran `vercel redeploy` on the git-linked Preview deployment so the existing
+  git-branch alias picks up the new env vars (new deployment
+  `dpl_BbzchowouqmJwNhCm8e59nhwSRf4` is Ready)
+
+#### Why it was done
+
+- User reported "application error" on the Preview — same root cause as the
+  previous branch: the git-triggered build happens before branch-scoped env
+  vars are added, so runtime Prisma/iron-session init crashes. Fix is the same
+  (add env + redeploy)
+
+#### Artifacts changed
+
+- Vercel project config (external state): new branch-scoped Preview env vars
+- No local files changed; no new commits in this mini-phase
+
+#### Validation
+
+- `bash scripts/phase_closeout.sh` — 5/5 green
+- `vercel inspect` on the redeployed deployment: status Ready, target preview
+- Git-branch alias reachable: HTTP/2 401 from Vercel SSO (deployment protection
+  layer responding — expected for unauthenticated curl; user's browser SSO
+  passes through)
+
+#### Notes
+
+- Recurring pattern: every new feature branch needs branch-scoped Preview env
+  vars added manually because `scripts/set-vercel-env.sh --include-preview`
+  adds them to ALL preview branches (not branch-scoped). The manual workaround
+  is `vercel env add KEY preview <branch-name> --force --yes`
+- No code changes in this mini-phase — purely infra/deployment operation
+- Working tree clean; branch in sync with origin after this phase
+
+---
+
 ### 2026-04-14 — Batch C-2: Contact summary card dashboard integration (T051, T052, T053)
 
 #### What was done
