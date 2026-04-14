@@ -1,4 +1,6 @@
 import { chromium, FullConfig } from "@playwright/test";
+import { mkdirSync } from "fs";
+import { dirname } from "path";
 
 /**
  * Vercel Preview deployments require SSO authentication. This global setup
@@ -10,11 +12,14 @@ async function globalSetup(_config: FullConfig) {
   const bypassUrl = process.env.BYPASS_URL;
   if (!bypassUrl) return;
 
+  const storagePath = "e2e/.auth/vercel-bypass.json";
+  mkdirSync(dirname(storagePath), { recursive: true });
+
   const browser = await chromium.launch();
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto(bypassUrl, { waitUntil: "networkidle" });
-  await context.storageState({ path: "e2e/.auth/vercel-bypass.json" });
+  await context.storageState({ path: storagePath });
   await browser.close();
 }
 
